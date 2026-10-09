@@ -2,7 +2,7 @@
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server written in Go, speaking **JSON-RPC 2.0 over stdio**. It ships as a single static binary with no Node runtime — Node is only needed for the optional MCP Inspector debugging UI.
 
-The scaffold currently provides one reference tool, `greet`, that exercises the full loop: build, run, test, debug, and connect from an MCP client.
+The scaffold provides a reference tool, `greet`, that exercises the full loop: build, run, test, debug, and connect from an MCP client. On top of that, the **Parallels Desktop module** lists and inspects VMs (see below) — and is the template for adding more command-backed modules.
 
 ## Requirements
 
@@ -60,8 +60,26 @@ Restart the client after editing. Desktop hides stderr, which is why `PDFM_MCP_L
 |---|---|---|
 | `PDFM_MCP_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `PDFM_MCP_LOG_FILE` | empty | If set, logs are also appended to this file |
+| `PDFM_MCP_VM_ID` | empty | Parallels VM id or name to target (see module below) |
+| `PDFM_MCP_VM_CACHE_TTL` | `30s` | Freshness window of the in-memory VM list cache |
 
-Flags: `--version` prints version and exits; `--log-level` overrides the env var.
+Flags: `--version` prints version and exits; `--log-level` and `--vm-id` override the env vars.
+
+### Parallels Desktop module
+
+When both `prlctl` and `prlsrvctl` are found at startup (PATH, then `/usr/local/bin` and `/usr/bin`), the module enables two read-only tools backed by a 30s in-memory cache of `prlctl list -a -i --json`:
+
+| Tool | Modes | What it returns |
+|---|---|---|
+| `parallels_list_vms` | fleet + VM | The VM list with full prlctl detail (all VMs, or only the target) |
+| `parallels_vm_info` | VM only | The exact cached prlctl JSON object of the target VM |
+
+- **Fleet mode** (no `--vm-id`): everything targets all VMs; `parallels_vm_info` is not exposed.
+- **VM mode** (`--vm-id <uuid-or-name>`): commands target that VM; prlctl resolves names to ids at fetch time.
+- The cache warms at startup (a failed warm-up only logs a warning; tools retry on demand), refreshes single-flight when the TTL expires, and keeps stale data if a refresh fails.
+- On hosts without Parallels Desktop the module stays off: the log says so and no `parallels_*` tool is exposed.
+
+QA walkthrough: [`docs/qa/002-parallels-desktop-module-QA.md`](docs/qa/002-parallels-desktop-module-QA.md).
 
 **The stdout rule:** stdout carries the MCP protocol. Nothing else may be written there — logging goes to stderr (and optionally a file). `golangci-lint` (`forbidigo`) enforces this in CI.
 
@@ -99,10 +117,13 @@ cmd/pdfm-mcp/        entrypoint: flags, logger, signal handling, run server
 internal/config/     env/flag parsing -> Config
 internal/server/     builds *mcp.Server, registers all tools
 internal/tools/      one file per tool + Register<Name>
+internal/parallels/  Parallels Desktop module: facade + service (detection,
+                     exec, VM cache) + models + interfaces
 internal/version/    ldflags-injected build info
 test/e2e/            stdio end-to-end test (build tag: e2e)
 scripts/inspect.sh   MCP Inspector wrapper
 docs/specs/          implementation specs
+docs/qa/             QA walkthroughs, one per spec
 ```
 
 All non-entrypoint code lives under `internal/`. No business logic in `main.go`. `bin/`, `dist/`, `coverage.out` are build outputs (git-ignored).

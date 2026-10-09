@@ -38,11 +38,15 @@ func TestGreetHandler(t *testing.T) {
 }
 
 func TestGreetOverInMemoryTransport(t *testing.T) {
+	// Disable the Parallels module for this test so server.New never touches
+	// the real CLI, even on machines where prlctl exists.
+	initParallelsForTest(t, &testRunner{}, nil, "")
+
 	ctx := context.Background()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	clientT, serverT := mcp.NewInMemoryTransports()
-	srvSession, err := server.New(logger).Connect(ctx, serverT, nil)
+	srvSession, err := server.New(logger, testConfig()).Connect(ctx, serverT, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

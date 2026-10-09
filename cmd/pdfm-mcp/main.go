@@ -41,7 +41,7 @@ func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	if err := server.New(logger).Run(ctx, &mcp.StdioTransport{}); err != nil {
+	if err := server.New(logger, cfg).Run(ctx, &mcp.StdioTransport{}); err != nil {
 		logger.Error("server exited with error", "err", err)
 		return 1
 	}
