@@ -9,14 +9,12 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/cjlapao/pdfm-mcp/internal/parallels"
 )
 
 // DefaultVMCacheTTL is how long the Parallels VM list cache stays fresh.
 const DefaultVMCacheTTL = 30 * time.Second
-
-// maxVMIDLength bounds the --vm-id value; prlctl ids are UUIDs and names are
-// short — anything longer is a mistake or an attack.
-const maxVMIDLength = 256
 
 // Config holds runtime settings.
 type Config struct {
@@ -74,21 +72,16 @@ func Load(args []string, stderr io.Writer) (Config, error) {
 	return cfg, nil
 }
 
-// validateVMID rejects values that could not be a VM id or name. The value
-// is later passed to prlctl as a single argv element (no shell), but we keep
-// the surface small anyway.
+// validateVMID rejects values that could not be a VM id or name. Empty is
+// valid (fleet mode). The actual rules live in parallels.ValidateVMRef so
+// that startup (--vm-id) and per-call tool arguments share one
+// implementation.
 func validateVMID(vmID string) error {
-	vmID = strings.TrimSpace(vmID)
-	if vmID == "" {
+	if strings.TrimSpace(vmID) == "" {
 		return nil
 	}
-	if len(vmID) > maxVMIDLength {
-		return fmt.Errorf("invalid --vm-id: longer than %d characters", maxVMIDLength)
-	}
-	for _, r := range vmID {
-		if r == 0 || r < 0x20 || r > 0x7e {
-			return fmt.Errorf("invalid --vm-id: contains non-printable characters")
-		}
+	if _, err := parallels.ValidateVMRef(vmID); err != nil {
+		return fmt.Errorf("invalid --vm-id: %w", err)
 	}
 	return nil
 }

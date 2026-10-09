@@ -54,14 +54,18 @@ const toolSampleVMsJSON = `[
 
 // testRunner is a fake CommandRunner that records calls.
 type testRunner struct {
-	mu    sync.Mutex
-	calls int
-	fn    func(exe string, args []string) (string, error)
+	mu       sync.Mutex
+	calls    int
+	lastExe  string
+	lastArgs []string
+	fn       func(exe string, args []string) (string, error)
 }
 
 func (f *testRunner) Run(_ context.Context, exe string, args ...string) (string, error) {
 	f.mu.Lock()
 	f.calls++
+	f.lastExe = exe
+	f.lastArgs = append([]string(nil), args...)
 	f.mu.Unlock()
 	if f.fn != nil {
 		return f.fn(exe, args)
@@ -73,6 +77,12 @@ func (f *testRunner) count() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.calls
+}
+
+func (f *testRunner) lastCall() (string, []string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.lastExe, append([]string(nil), f.lastArgs...)
 }
 
 // targetFilteringFn emulates `prlctl list <target> -a -i --json`: only the

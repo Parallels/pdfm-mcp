@@ -9,6 +9,23 @@ import (
 	"github.com/cjlapao/pdfm-mcp/internal/parallels/models"
 )
 
+// PowerOp identifies one of the prlctl power subcommands. The values are
+// the exact argv element passed to prlctl; they come from a fixed set, so
+// no external input can become a command or flag.
+type PowerOp string
+
+// The supported power operations.
+const (
+	PowerStart       PowerOp = "start"        // start a stopped VM (or resume a paused one)
+	PowerResume      PowerOp = "resume"       // resume a paused VM
+	PowerPause       PowerOp = "pause"        // pause a running VM
+	PowerSuspend     PowerOp = "suspend"      // suspend a running VM (state kept)
+	PowerRestart     PowerOp = "restart"      // graceful shutdown + start
+	PowerReset       PowerOp = "reset"        // hard shutdown + start
+	PowerResetUptime PowerOp = "reset-uptime" // reset the uptime counter
+	PowerStop        PowerOp = "stop"         // graceful shutdown (or hard with kill)
+)
+
 // VMListResult is the outcome of a ListVMs call.
 type VMListResult struct {
 	VMs       []models.VM
@@ -46,6 +63,12 @@ type ParallelsService interface {
 	// VMRaw returns the exact cached prlctl JSON blob of the target VM.
 	// It is only meaningful in VM mode.
 	VMRaw(ctx context.Context, force bool) (VMRawResult, error)
+
+	// Power executes a power command (op) against the VM identified by vmRef
+	// (id or name, pre-validated). kill and dropState only apply to
+	// PowerStop. On success the VM cache is invalidated. It returns
+	// prlctl's stdout (usually empty on success).
+	Power(ctx context.Context, op PowerOp, vmRef string, kill, dropState bool) (string, error)
 
 	// RefreshCache re-runs the list command unconditionally and replaces the
 	// cache contents.

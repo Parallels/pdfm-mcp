@@ -69,6 +69,7 @@ type fakeRunner struct {
 	calls      int
 	lastExe    string
 	lastArgs   []string
+	lastCtx    context.Context
 	fn         func(exe string, args []string) (string, error)
 	defaultOut string
 	defErr     error
@@ -80,6 +81,7 @@ func (f *fakeRunner) Run(ctx context.Context, exe string, args ...string) (strin
 	f.calls++
 	f.lastExe = exe
 	f.lastArgs = append([]string(nil), args...)
+	f.lastCtx = ctx
 	f.mu.Unlock()
 
 	if f.delay > 0 {
@@ -105,6 +107,12 @@ func (f *fakeRunner) lastCall() (string, []string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.lastExe, f.lastArgs
+}
+
+func (f *fakeRunner) lastDeadline() (time.Time, bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.lastCtx.Deadline()
 }
 
 // targetFilteringFake emulates `prlctl list <target> -a -i --json`: it

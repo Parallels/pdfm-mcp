@@ -67,19 +67,28 @@ Flags: `--version` prints version and exits; `--log-level` and `--vm-id` overrid
 
 ### Parallels Desktop module
 
-When both `prlctl` and `prlsrvctl` are found at startup (PATH, then `/usr/local/bin` and `/usr/bin`), the module enables two read-only tools backed by a 30s in-memory cache of `prlctl list -a -i --json`:
+When both `prlctl` and `prlsrvctl` are found at startup (PATH, then `/usr/local/bin` and `/usr/bin`), the module enables read tools backed by a 30s in-memory cache of `prlctl list -a -i --json` plus the power-operation tools:
 
-| Tool | Modes | What it returns |
+| Tool | Modes | What it does |
 |---|---|---|
 | `parallels_list_vms` | fleet + VM | The VM list with full prlctl detail (all VMs, or only the target) |
 | `parallels_vm_info` | VM only | The exact cached prlctl JSON object of the target VM |
+| `parallels_vm_start` | fleet + VM | `prlctl start` (start a stopped VM or resume a paused one) |
+| `parallels_vm_resume` | fleet + VM | `prlctl resume` |
+| `parallels_vm_pause` | fleet + VM | `prlctl pause` |
+| `parallels_vm_suspend` | fleet + VM | `prlctl suspend` |
+| `parallels_vm_restart` | fleet + VM | `prlctl restart` (graceful shutdown + start) |
+| `parallels_vm_reset` | fleet + VM | `prlctl reset` (hard shutdown + start) |
+| `parallels_vm_reset_uptime` | fleet + VM | `prlctl reset-uptime` |
+| `parallels_vm_stop` | fleet + VM | `prlctl stop` (optional `kill` / `drop_state`) |
 
-- **Fleet mode** (no `--vm-id`): everything targets all VMs; `parallels_vm_info` is not exposed.
-- **VM mode** (`--vm-id <uuid-or-name>`): commands target that VM; prlctl resolves names to ids at fetch time.
-- The cache warms at startup (a failed warm-up only logs a warning; tools retry on demand), refreshes single-flight when the TTL expires, and keeps stale data if a refresh fails.
+- **Fleet mode** (no `--vm-id`): reads target all VMs; `parallels_vm_info` is not exposed; power tools **require** a `vm_id` argument (a VM id or name).
+- **VM mode** (`--vm-id <uuid-or-name>`): reads and power tools target that VM; prlctl resolves names to ids at fetch time; power tools **reject** an explicit `vm_id` (a single-VM server must not touch other VMs).
+- The cache warms at startup (a failed warm-up only logs a warning; tools retry on demand), refreshes single-flight when the TTL expires, and keeps stale data if a refresh fails. Every successful power command invalidates the cache so the next read reflects the new state.
+- Power commands run with a 180s timeout (guest shutdowns can be slow); reads keep the 30s cap.
 - On hosts without Parallels Desktop the module stays off: the log says so and no `parallels_*` tool is exposed.
 
-QA walkthrough: [`docs/qa/002-parallels-desktop-module-QA.md`](docs/qa/002-parallels-desktop-module-QA.md).
+QA walkthrough: [`docs/qa/002-parallels-desktop-module-QA.md`](docs/qa/002-parallels-desktop-module-QA.md), power operations: [`docs/qa/003-parallels-power-operations-QA.md`](docs/qa/003-parallels-power-operations-QA.md).
 
 **The stdout rule:** stdout carries the MCP protocol. Nothing else may be written there — logging goes to stderr (and optionally a file). `golangci-lint` (`forbidigo`) enforces this in CI.
 

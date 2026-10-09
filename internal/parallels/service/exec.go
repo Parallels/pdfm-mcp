@@ -8,8 +8,11 @@ import (
 	"time"
 )
 
-// commandTimeout bounds a single prlctl/prlsrvctl invocation.
-const commandTimeout = 30 * time.Second
+// defaultCommandTimeout bounds a single prlctl/prlsrvctl invocation when the
+// caller provides no context deadline. Power commands (stop, restart, reset)
+// pass a longer deadline instead — see powerTimeout in power.go.
+// It is a variable so tests can shorten it.
+var defaultCommandTimeout = 30 * time.Second
 
 // maxOutputBytes bounds how much stdout we are willing to capture from a
 // single invocation; a list command on a machine with many VMs can get large,
@@ -33,7 +36,13 @@ type realRunner struct{}
 func NewCommandRunner() CommandRunner { return realRunner{} }
 
 func (realRunner) Run(ctx context.Context, exe string, args ...string) (string, error) {
-	runCtx, cancel := context.WithTimeout(ctx, commandTimeout)
+	// A caller-provided deadline (e.g. the power-operation timeout) is
+	// authoritative; the default cap is only a backstop for contexts without
+	// one.
+	runCtx, cancel := ctx, func() {}
+	if _, ok := ctx.Deadline(); !ok {
+		runCtx, cancel = context.WithTimeout(ctx, defaultCommandTimeout)
+	}
 	defer cancel()
 
 	cmd := exec.CommandContext(runCtx, exe, args...) // #nosec G204 -- exe comes from our own detection step, args are fixed flags plus a validated VM id/name
@@ -45,7 +54,7 @@ func (realRunner) Run(ctx context.Context, exe string, args ...string) (string, 
 		// Go reports a context kill as a plain "signal: killed" exit error,
 		// so the context itself is the source of truth for that case.
 		if cerr := runCtx.Err(); cerr != nil {
-			return "", fmt.Errorf("%s %s: %v (command limit %s)", exe, joinArgs(args), cerr, commandTimeout)
+			return "", fmt.Errorf("%s %s: %v (command timed out)", exe, joinArgs(args), cerr)
 		}
 		return "", mapRunError(exe, args, err, &stderr)
 	}

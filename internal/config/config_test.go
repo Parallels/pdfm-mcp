@@ -61,7 +61,9 @@ func TestLoadVMIDValidation(t *testing.T) {
 			t.Fatalf("validateVMID(%q) = %v, want nil", ok, err)
 		}
 	}
-	long := make([]byte, maxVMIDLength+1)
+	// parallels.MaxVMRefLength is 256; the bound now lives in the parallels
+	// service (single source of truth), so build the over-long value here.
+	long := make([]byte, 257)
 	for i := range long {
 		long[i] = 'a'
 	}

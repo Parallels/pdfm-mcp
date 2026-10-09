@@ -106,12 +106,25 @@ func TestParallelsGating(t *testing.T) {
 		}
 	}()
 
+	// The power tools are listed in both modes. They are only LISTED here —
+	// never executed — because a real run would power-cycle a real VM.
+	powerTools := []string{
+		"parallels_vm_start", "parallels_vm_resume", "parallels_vm_pause",
+		"parallels_vm_suspend", "parallels_vm_restart", "parallels_vm_reset",
+		"parallels_vm_reset_uptime", "parallels_vm_stop",
+	}
+
 	names := listed(t, sessFleet)
 	if !names["parallels_list_vms"] {
 		t.Fatalf("fleet mode: parallels_list_vms not listed: %v", names)
 	}
 	if names["parallels_vm_info"] {
 		t.Fatalf("fleet mode: parallels_vm_info must not be listed: %v", names)
+	}
+	for _, p := range powerTools {
+		if !names[p] {
+			t.Fatalf("fleet mode: %s not listed: %v", p, names)
+		}
 	}
 
 	res, err := sessFleet.CallTool(ctx, &mcp.CallToolParams{Name: "parallels_list_vms", Arguments: map[string]any{}})
@@ -152,6 +165,11 @@ func TestParallelsGating(t *testing.T) {
 	vmNames := listed(t, sessVM)
 	if !vmNames["parallels_list_vms"] || !vmNames["parallels_vm_info"] {
 		t.Fatalf("vm mode: expected both parallels tools: %v", vmNames)
+	}
+	for _, p := range powerTools {
+		if !vmNames[p] {
+			t.Fatalf("vm mode: %s not listed: %v", p, vmNames)
+		}
 	}
 
 	info, err := sessVM.CallTool(ctx, &mcp.CallToolParams{Name: "parallels_vm_info", Arguments: map[string]any{}})

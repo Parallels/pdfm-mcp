@@ -35,12 +35,26 @@ func New(logger *slog.Logger, cfg config.Config) *mcp.Server {
 		parallels.WithLogger(logger),
 		parallels.WithCacheTTL(cfg.VMCacheTTL),
 	); ok {
+		// Power tools are available in both modes; the mode only shapes the
+		// target contract (fleet: vm_id required, VM: configured target).
+		mode := tools.PowerFleet
+		if cfg.VMID != "" {
+			mode = tools.PowerVM
+		}
 		// Fleet-scoped commands work in both modes.
 		tools.RegisterParallelsListVms(s)
 		// VM-scoped commands are only available when a target VM is configured.
 		if cfg.VMID != "" {
 			tools.RegisterParallelsVMInfo(s)
 		}
+		tools.RegisterParallelsVMStart(s, mode)
+		tools.RegisterParallelsVMResume(s, mode)
+		tools.RegisterParallelsVMPause(s, mode)
+		tools.RegisterParallelsVMSuspend(s, mode)
+		tools.RegisterParallelsVMRestart(s, mode)
+		tools.RegisterParallelsVMReset(s, mode)
+		tools.RegisterParallelsVMResetUptime(s, mode)
+		tools.RegisterParallelsVMStop(s, mode)
 
 		// Warm the cache at startup: prlctl list -a -i --json (fleet) or
 		// prlctl list <id> -a -i --json (VM mode).

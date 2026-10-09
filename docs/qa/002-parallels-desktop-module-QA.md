@@ -35,9 +35,11 @@ go build -o bin/pdfm-mcp ./cmd/pdfm-mcp
 ```sh
 make check       # fmt, vet, lint, CGO_ENABLED=1 go test -race ./...
 make test-e2e    # go test -tags e2e ./test/e2e/... (skips gating test w/o prlctl)
-make smoke       # starts the server on stdio; expect tool list:
-                 #   fleet mode:  greet, parallels_list_vms
-                 #   VM mode:     greet, parallels_list_vms, parallels_vm_info
+make smoke       # starts the server on stdio; expect tool list (with the
+                 # eight parallels_vm_* power tools from spec 003):
+                 #   fleet mode:  greet, parallels_list_vms, + 8 power tools
+                 #   VM mode:     greet, parallels_list_vms, parallels_vm_info,
+                 #                + 8 power tools
 ```
 
 Expected: all green, no stdout pollution, no `panic` in stderr.
@@ -143,7 +145,7 @@ anything.
 - VM names that collide between machines (same name, different IDs) resolve
   to the first match by prlctl; prefer UUIDs in `--vm-id` for precision.
 - No watch/invalidation on the cache besides TTL + `refresh: true` +
-  `InvalidateCache` (exported, unused by tools yet — wire it when mutable
-  commands land).
+  `InvalidateCache`. The power tools (spec 003) call it after every
+  successful command, so reads always reflect the latest VM state.
 - E2E "binaries missing" path is only exercisable where Parallels is not
   installed (covered at unit level instead).

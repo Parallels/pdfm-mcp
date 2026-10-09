@@ -19,6 +19,29 @@ type Option = service.Option
 // CommandRunner executes a Parallels CLI binary (tests inject a fake).
 type CommandRunner = service.CommandRunner
 
+// PowerOp identifies a prlctl power subcommand (start, stop, …).
+type PowerOp = interfaces.PowerOp
+
+// The supported power operations, re-exported for tool handlers.
+const (
+	PowerStart       = interfaces.PowerStart
+	PowerResume      = interfaces.PowerResume
+	PowerPause       = interfaces.PowerPause
+	PowerSuspend     = interfaces.PowerSuspend
+	PowerRestart     = interfaces.PowerRestart
+	PowerReset       = interfaces.PowerReset
+	PowerResetUptime = interfaces.PowerResetUptime
+	PowerStop        = interfaces.PowerStop
+)
+
+// MaxVMRefLength bounds a VM id/name reference.
+const MaxVMRefLength = service.MaxVMRefLength
+
+// ValidateVMRef trims and validates a VM id/name reference before it is
+// passed to prlctl. The single source of truth for the --vm-id and tool
+// argument rules.
+func ValidateVMRef(ref string) (string, error) { return service.ValidateVMRef(ref) }
+
 // NewCommandRunner returns the production command runner.
 func NewCommandRunner() CommandRunner { return service.NewCommandRunner() }
 
