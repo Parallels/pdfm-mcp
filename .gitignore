@@ -1,0 +1,26 @@
+# Build outputs
+/bin/
+/dist/
+coverage.out
+*.test
+
+# Go workspace/vendor
+go.work
+go.work.sum
+
+# Editor / OS
+.DS_Store
+.idea/
+*.swp
+
+# VS Code: keep shared config, ignore the rest
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Local logs and secrets
+*.log
+.env
+.env.*

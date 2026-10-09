@@ -1,0 +1,19 @@
+{
+  "go.useLanguageServer": true,
+  "go.lintTool": "golangci-lint",
+  "go.lintOnSave": "workspace",
+  "go.formatTool": "gofmt",
+  "go.testFlags": ["-race", "-count=1"],
+  "go.testEnvVars": { "CGO_ENABLED": "1" },
+  "go.buildTags": "",
+  "gopls": {
+    "formatting.gofumpt": false,
+    "ui.semanticTokens": true
+  },
+  "editor.formatOnSave": true,
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+    "editor.codeActionsOnSave": { "source.organizeImports": "explicit" }
+  },
+  "[makefile]": { "editor.insertSpaces": false }
+}

@@ -1,0 +1,35 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - misspell
+    - revive
+    - gocritic
+    - bodyclose
+    - noctx
+    - forbidigo
+  settings:
+    forbidigo:
+      forbid:
+        - pattern: ^fmt\.Print(f|ln)?$
+          msg: "stdout is reserved for the MCP protocol; use slog (stderr)"
+        - pattern: ^os\.Stdout$
+          msg: "stdout is reserved for the MCP protocol"
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters: [forbidigo]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
