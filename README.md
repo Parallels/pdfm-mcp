@@ -46,6 +46,14 @@ Setup, approval gates and first-release prerequisites are in
 
 Distribution is specified in [`docs/specs/013-release-pipeline.md`](docs/specs/013-release-pipeline.md) to [`016`](docs/specs/016-mcp-registry.md); the files exist (`.goreleaser.yaml`, `release.yml`, `packaging/`) but nothing is published yet. Open items before the first release are in [`docs/release.md`](docs/release.md). Once released:
 
+### Install script (macOS)
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Parallels/pdfm-mcp/main/scripts/install.sh | bash
+```
+
+Downloads the universal (Apple silicon + Intel) binary from GitHub Releases, verifies it against the release's `checksums.txt`, and installs it to `/usr/local/bin` (sudo only if that directory is not writable). Options: `--version 1.2.3` (default: latest production release), `--pre-release` for canary/beta, `--path DIR`, `--update`, `--uninstall`. As with the cask, GUI clients need the absolute path: `/usr/local/bin/pdfm-mcp`.
+
 ### Homebrew (macOS)
 
 ```sh
@@ -330,6 +338,7 @@ internal/parallels/  Parallels Desktop module: facade + service (detection,
 internal/version/    ldflags-injected build info
 test/e2e/            stdio end-to-end test (build tag: e2e)
 scripts/inspect.sh   MCP Inspector wrapper
+ scripts/install.sh   release installer (GitHub Releases -> /usr/local/bin)
 docs/specs/          implementation specs
 docs/qa/             QA walkthroughs, one per spec
 ```
