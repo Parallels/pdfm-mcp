@@ -110,7 +110,9 @@ homebrew_casks:
     homepage: "https://github.com/Parallels/pdfm-mcp"   # confirm
     description: "MCP server for controlling Parallels Desktop virtual machines"
     license: "<SPDX id or 'Proprietary' as decided by Legal>"
-    binary: pdfm-mcp
+    # No `binary:` field: it is deprecated in GoReleaser v2 (goreleaser
+    # check fails on it) and its absence already defaults the cask's binary
+    # to the cask name (pdfm-mcp), which is the executable in the archive.
     skip_upload: true
     # Required for the pipe to generate the cask at all, but unused with
     # skip_upload: true (the `tap` job in release.yml owns publishing).
