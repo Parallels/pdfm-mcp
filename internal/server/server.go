@@ -12,6 +12,7 @@ import (
 	"github.com/cjlapao/pdfm-mcp/internal/orchestrator"
 	"github.com/cjlapao/pdfm-mcp/internal/parallels"
 	"github.com/cjlapao/pdfm-mcp/internal/policy"
+	"github.com/cjlapao/pdfm-mcp/internal/telemetry"
 	"github.com/cjlapao/pdfm-mcp/internal/tools"
 	"github.com/cjlapao/pdfm-mcp/internal/version"
 )
@@ -60,6 +61,19 @@ func New(logger *slog.Logger, cfg config.Config) *mcp.Server {
 		// (cgo, spec 022), so parallels_vm_observe is always available on
 		// macOS.
 		observeRec := ocr.NewVision(ocr.WithVisionLogger(logger))
+
+		// Telemetry (spec 024): enabled only when the build carries an
+		// API key and no opt-out is set; a disabled init logs one line
+		// and does nothing else.
+		telemetryMode := "fleet"
+		if mode == tools.PowerVM {
+			telemetryMode = "vm"
+		}
+		telemetry.Init(context.Background(), telemetry.InitConfig{
+			Disabled: cfg.TelemetryDisabled,
+			Mode:     telemetryMode,
+			Logger:   logger,
+		})
 
 		registerAll(s, logger, pol, mode, toolTable(mode, observeRec), observeRec)
 

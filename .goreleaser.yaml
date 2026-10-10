@@ -32,6 +32,12 @@ builds:
       - -X github.com/cjlapao/pdfm-mcp/internal/version.Version={{ .Version }}
       - -X github.com/cjlapao/pdfm-mcp/internal/version.Commit={{ .ShortCommit }}
       - -X github.com/cjlapao/pdfm-mcp/internal/version.Date={{ .Date }}
+      # Telemetry key (spec 024), injected from the build environment like
+      # the version; empty = telemetry disabled in that build. The variable
+      # must EXIST (possibly empty) — the Makefile exports it and the
+      # release workflow sets it from the secret; a missing key makes this
+      # template fail the build on purpose.
+      - -X github.com/cjlapao/pdfm-mcp/internal/telemetry.APIKey={{ .Env.AMPLITUDE_API_KEY }}
 
 universal_binaries:
   - ids: [pdfm-mcp]

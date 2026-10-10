@@ -15,7 +15,7 @@ func VMSuspend(ctx context.Context, _ *mcp.CallToolRequest, in PowerVMInput) (*m
 
 // RegisterParallelsVMSuspend adds the parallels_vm_suspend tool for the given mode.
 func RegisterParallelsVMSuspend(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:         "parallels_vm_suspend",
 		Description:  powerDescription(descVMSuspend, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false},

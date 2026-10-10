@@ -15,7 +15,7 @@ func VMRestart(ctx context.Context, _ *mcp.CallToolRequest, in PowerVMInput) (*m
 
 // RegisterParallelsVMRestart adds the parallels_vm_restart tool for the given mode.
 func RegisterParallelsVMRestart(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:        "parallels_vm_restart",
 		Description: powerDescription(descVMRestart, mode),
 		Annotations: &mcp.ToolAnnotations{

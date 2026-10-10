@@ -51,7 +51,7 @@ func VMChangePassword(ctx context.Context, _ *mcp.CallToolRequest, in VMChangePa
 // RegisterParallelsVMChangePassword adds the parallels_vm_change_password
 // tool for the given mode.
 func RegisterParallelsVMChangePassword(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:         "parallels_vm_change_password",
 		Description:  powerDescription(descVMChangePassword, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false, DestructiveHint: truePtr(), IdempotentHint: false, OpenWorldHint: truePtr()},

@@ -62,7 +62,7 @@ func VMReclaimDisk(ctx context.Context, _ *mcp.CallToolRequest, in VMReclaimDisk
 // RegisterParallelsVMReclaimDisk adds the parallels_vm_reclaim_disk tool
 // for the given mode.
 func RegisterParallelsVMReclaimDisk(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:         "parallels_vm_reclaim_disk",
 		Description:  powerDescription(descVMReclaimDisk, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false, DestructiveHint: falsePtr(), IdempotentHint: true, OpenWorldHint: truePtr()},

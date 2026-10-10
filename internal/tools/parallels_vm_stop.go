@@ -17,7 +17,7 @@ func VMStop(ctx context.Context, _ *mcp.CallToolRequest, in PowerStopInput) (*mc
 
 // RegisterParallelsVMStop adds the parallels_vm_stop tool for the given mode.
 func RegisterParallelsVMStop(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name: "parallels_vm_stop",
 		Description: powerDescription(
 			descVMStop,

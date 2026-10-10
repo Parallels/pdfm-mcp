@@ -17,7 +17,7 @@ func VMResetUptime(ctx context.Context, _ *mcp.CallToolRequest, in PowerVMInput)
 // RegisterParallelsVMResetUptime adds the parallels_vm_reset_uptime tool for
 // the given mode.
 func RegisterParallelsVMResetUptime(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:         "parallels_vm_reset_uptime",
 		Description:  powerDescription(descVMResetUptime, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false},

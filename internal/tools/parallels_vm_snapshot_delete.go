@@ -42,7 +42,7 @@ func VMDeleteSnapshot(ctx context.Context, _ *mcp.CallToolRequest, in VMDeleteSn
 // RegisterParallelsVMSnapshotDelete adds the parallels_vm_snapshot_delete
 // tool for the given mode.
 func RegisterParallelsVMSnapshotDelete(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:         "parallels_vm_snapshot_delete",
 		Description:  powerDescription(descVMSnapshotDelete, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false, DestructiveHint: truePtr(), IdempotentHint: false, OpenWorldHint: truePtr()},

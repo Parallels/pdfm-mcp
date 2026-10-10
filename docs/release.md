@@ -190,6 +190,7 @@ Chosen: `<decision pending>`.
 | `MACOS_NOTARY_KEY_ID` | secret | key id |
 | `MACOS_NOTARY_ISSUER_ID` | secret | issuer UUID |
 | `HOMEBREW_TAP_TOKEN` | secret | fine-grained PAT, `contents:write` on the tap repo only |
+| `AMPLITUDE_API_KEY` | secret (`release` env) | Amplitude project API key; baked into release binaries at build time (spec 024). Unset = the release ships without telemetry and the run logs a warning |
 | `MCP_PRIVATE_KEY` | secret (DNS auth option only) | Ed25519 private key |
 | `GH_WORKFLOW_TOKEN` | optional repo secret | Contents, Pull requests and Issues read/write on this repo; lets generated release PRs trigger CI |
 | `PUBLISH_PUBLIC` | repo variable | `'true'` when public channels are approved |
@@ -234,6 +235,7 @@ Every `<...>` placeholder and unverified assumption:
 | Brand-approved `packaging/mcpb/icon.png` (512x512). A neutral placeholder is committed so dev builds work; replace before a public release | packaging | brand/Legal |
 | Registry name and auth (OIDC or DNS), `MCP_SERVER_NAME`, `PUBLISH_PUBLIC` approval | repo vars, spec 016 | owner + Legal |
 | `mcp-publisher` pin: v1.8.1 verified as the candidate (2026-10-09; linux amd64 sha256 in the official `registry_1.8.1_checksums.txt`, recorded in `release.yml`); a human must review and paste the values into the `registry` job env | `release.yml` `registry` job env | release owner |
+| `AMPLITUDE_API_KEY` in the `release` environment (Amplitude project key) before the first release that should report usage; the run warns loudly when it is absent | `release.yml` `goreleaser` job | release owner |
 | Private-repo asset distribution option | section 7 | owner |
 | Verify action majors: `anchore/sbom-action/download-syft@v0`, `actions/attest-build-provenance@v3`, `actions/setup-node@v5` | workflows | implementer |
 | `${__dirname}` command form, empty `user_config` behaviour, exec bit survival in Claude Desktop | spec 015 section 10, QA 015 | QA |

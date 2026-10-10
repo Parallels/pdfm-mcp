@@ -15,6 +15,7 @@ import (
 	"github.com/cjlapao/pdfm-mcp/internal/config"
 	"github.com/cjlapao/pdfm-mcp/internal/parallels"
 	"github.com/cjlapao/pdfm-mcp/internal/server"
+	"github.com/cjlapao/pdfm-mcp/internal/telemetry"
 	"github.com/cjlapao/pdfm-mcp/internal/version"
 )
 
@@ -43,6 +44,8 @@ func run() int {
 	defer stop()
 	// Kill any background exec jobs (spec 018) when the server exits.
 	defer parallels.Shutdown()
+	// Flush queued telemetry events (spec 024); a no-op when disabled.
+	defer telemetry.Close()
 
 	if err := server.New(logger, cfg).Run(ctx, &mcp.StdioTransport{}); err != nil {
 		logger.Error("server exited with error", "err", err)

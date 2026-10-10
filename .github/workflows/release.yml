@@ -29,6 +29,10 @@ on:
         required: true
       HOMEBREW_TAP_TOKEN:
         required: false
+      # Telemetry key (spec 024); optional so callers without it still run —
+      # a missing key ships a silent (telemetry-off) binary with a warning.
+      AMPLITUDE_API_KEY:
+        required: false
     outputs:
       release_tag:
         value: ${{ jobs.prepare.outputs.release_tag }}
@@ -158,6 +162,18 @@ jobs:
           for name in MACOS_SIGN_P12 MACOS_SIGN_PASSWORD MACOS_NOTARY_KEY MACOS_NOTARY_KEY_ID MACOS_NOTARY_ISSUER_ID; do
             [[ -n "${!name}" ]] || { echo "Missing signing secret: $name" >&2; exit 1; }
           done
+      # Telemetry (spec 024): the key is baked into the binary by the
+      # goreleaser ldflags below. Never blocks a release — a missing key
+      # ships a silent binary, but the warning makes that visible.
+      - name: Check telemetry key (spec 024)
+        env:
+          AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY }}
+        run: |
+          if [[ -n "${AMPLITUDE_API_KEY}" ]]; then
+            echo "Telemetry: API key present - release binaries will report anonymised usage."
+          else
+            echo "::warning::AMPLITUDE_API_KEY is not set - release binaries will ship WITHOUT telemetry (spec 024)."
+          fi
       - name: Prepare release notes
         id: notes
         env:
@@ -197,6 +213,9 @@ jobs:
           MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
           MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
           MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+          # Telemetry key (spec 024), injected via the .goreleaser.yaml
+          # ldflags; empty when the secret is unset => silent binary.
+          AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY }}
       # Provenance is optional (spec 013 section 2): never block the release.
       - uses: actions/attest-build-provenance@v3                  # verify the latest major
         continue-on-error: true

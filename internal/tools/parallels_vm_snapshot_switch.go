@@ -43,7 +43,7 @@ func VMSwitchSnapshot(ctx context.Context, _ *mcp.CallToolRequest, in VMSwitchSn
 // RegisterParallelsVMSnapshotSwitch adds the parallels_vm_snapshot_switch
 // tool for the given mode.
 func RegisterParallelsVMSnapshotSwitch(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:         "parallels_vm_snapshot_switch",
 		Description:  powerDescription(descVMSnapshotSwitch, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false, DestructiveHint: truePtr(), IdempotentHint: false, OpenWorldHint: truePtr()},

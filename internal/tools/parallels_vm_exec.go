@@ -63,7 +63,7 @@ func VMExec(ctx context.Context, _ *mcp.CallToolRequest, in ExecInput) (*mcp.Cal
 // RegisterParallelsVMExec adds the parallels_vm_exec tool for the given
 // mode.
 func RegisterParallelsVMExec(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name: "parallels_vm_exec",
 		Description: powerDescription(
 			descVMExec,

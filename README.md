@@ -118,6 +118,11 @@ Restart the client after editing. Desktop hides stderr, which is why `PDFM_MCP_L
 | `PDFM_MCP_ALLOW_TOOLS` | unset | Comma list of tool names or trailing-`*` globs; when set, only these are exposed (flag `--allow-tools`) |
 | `PDFM_MCP_DENY_TOOLS` | unset | Comma list of names or globs to hide; wins over allow (flag `--deny-tools`) |
 | `PDFM_MCP_ALLOW_VMS` | unset | Comma list of VM ids or names the tools may address, max 64; in VM mode `--vm-id` must be in it (flag `--allow-vms`) |
+| `PDFM_MCP_TELEMETRY_DISABLED` | `false` | Disables the usage telemetry collected by the released build (see below) |
+
+### Telemetry
+
+The released build of pdfm-mcp collects **anonymised usage telemetry**: which tools are used, whether they succeeded, and how long they took. It never collects tool arguments, VM ids or names, guest output, screen content, or error text. To disable telemetry, set `PDFM_MCP_TELEMETRY_DISABLED=true` — it always wins.
 
 ### Safety policy
 

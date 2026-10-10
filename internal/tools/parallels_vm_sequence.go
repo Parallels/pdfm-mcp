@@ -87,7 +87,7 @@ func RegisterParallelsVMSequence(s *mcp.Server, mode PowerMode, reg *orchestrato
 	// Normalize slice fields to plain "array" types (portability, same rule
 	// as the output schema).
 	normalizeNullArrays(input)
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:        "parallels_vm_sequence",
 		Description: sequenceDescription(reg, mode),
 		Annotations: &mcp.ToolAnnotations{

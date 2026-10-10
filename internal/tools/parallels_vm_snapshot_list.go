@@ -75,7 +75,7 @@ func VMListSnapshots(ctx context.Context, _ *mcp.CallToolRequest, in VMListSnaps
 // RegisterParallelsVMSnapshotList adds the parallels_vm_snapshot_list
 // tool for the given mode.
 func RegisterParallelsVMSnapshotList(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:         "parallels_vm_snapshot_list",
 		Description:  powerDescription(descVMSnapshotList, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: true, OpenWorldHint: truePtr()},
