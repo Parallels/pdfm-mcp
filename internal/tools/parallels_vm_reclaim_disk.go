@@ -5,13 +5,13 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
 )
 
 // VMReclaimDiskInput is the argument schema for the
 // parallels_vm_reclaim_disk tool.
 type VMReclaimDiskInput struct {
-	VMID          string `json:"vm_id,omitempty" jsonschema:"VM id or name to target"`
+	VMID          string `json:"vm_id,omitempty" jsonschema:"VM id or name to target: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	Estimate      bool   `json:"estimate,omitempty" jsonschema:"only report the estimated disk-space breakdown (bytes) without reclaiming; read-only, works on running and stopped VMs"`
 	AllowShutdown bool   `json:"allow_shutdown,omitempty" jsonschema:"for a real run on a running VM: shut the VM down before reclaiming (parllels 27.0.1 often reclaims while the VM stays running, so this is rarely needed)"`
 	Password      string `json:"password,omitempty" jsonschema:"current encryption password — required only when the VM is encrypted, 1-256 printable characters, fed to prlctl over stdin and never logged"`

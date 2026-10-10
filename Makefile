@@ -3,7 +3,7 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 BINARY      := pdfm-mcp
-MODULE      := github.com/cjlapao/pdfm-mcp
+MODULE      := github.com/Parallels/pdfm-mcp
 CMD         := ./cmd/pdfm-mcp
 BIN_DIR     := bin
 DIST_DIR    := dist

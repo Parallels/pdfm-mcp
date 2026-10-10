@@ -4,7 +4,7 @@
 # Validate with `make release-check`; dry run with `make release-snapshot`.
 #
 # OPEN DECISION (spec 013 section 2): the Go module is
-# github.com/cjlapao/pdfm-mcp while the remote is Parallels/pdfm-mcp.
+# github.com/Parallels/pdfm-mcp while the remote is Parallels/pdfm-mcp.
 # If the module is renamed, change the three -X ldflags paths below and the
 # MODULE variable in the Makefile together.
 version: 2
@@ -29,19 +29,19 @@ builds:
     mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - -s -w
-      - -X github.com/cjlapao/pdfm-mcp/internal/version.Version={{ .Version }}
-      - -X github.com/cjlapao/pdfm-mcp/internal/version.Commit={{ .ShortCommit }}
-      - -X github.com/cjlapao/pdfm-mcp/internal/version.Date={{ .Date }}
+      - -X github.com/Parallels/pdfm-mcp/internal/version.Version={{ .Version }}
+      - -X github.com/Parallels/pdfm-mcp/internal/version.Commit={{ .ShortCommit }}
+      - -X github.com/Parallels/pdfm-mcp/internal/version.Date={{ .Date }}
       # Telemetry key (spec 024), injected from the build environment like
       # the version; empty = telemetry disabled in that build. The variable
       # must EXIST (possibly empty) — the Makefile exports it and the
       # release workflow sets it from the secret; a missing key makes this
       # template fail the build on purpose.
-      - -X github.com/cjlapao/pdfm-mcp/internal/telemetry.APIKey={{ .Env.AMPLITUDE_API_KEY }}
+      - -X github.com/Parallels/pdfm-mcp/internal/telemetry.APIKey={{ .Env.AMPLITUDE_API_KEY }}
 
 universal_binaries:
   - ids: [pdfm-mcp]
-    replace: true          # only the merged binary is archived and notarized
+    replace: true # only the merged binary is archived and notarized
     name_template: pdfm-mcp
 
 notarize:
@@ -60,7 +60,7 @@ notarize:
         key_id: "{{ .Env.MACOS_NOTARY_KEY_ID }}"
         key: "{{ .Env.MACOS_NOTARY_KEY }}"
         wait: true
-        timeout: 20m       # documented maximum
+        timeout: 20m # documented maximum
 
 archives:
   - id: default
@@ -68,18 +68,14 @@ archives:
     name_template: "pdfm-mcp_{{ .Version }}_darwin_universal"
     files:
       - README.md
-      # LICENSE does not exist yet (Legal decides, spec 013 section 3). The
-      # glob below matches nothing until it does, so builds work without it.
-      # Verify with `goreleaser check` / a snapshot that an empty glob is
-      # tolerated by the installed version; otherwise delete this line.
-      - "LICEN[CS]E*"
+      - LICENSE
 
 checksum:
   name_template: checksums.txt
   algorithm: sha256
 
 sboms:
-  - artifacts: archive     # needs `syft` on PATH (release.yml installs it)
+  - artifacts: archive # needs `syft` on PATH (release.yml installs it)
 
 changelog:
   sort: asc
@@ -89,11 +85,57 @@ changelog:
 
 release:
   github:
-    owner: Parallels          # confirm; GoReleaser can infer from the remote
+    owner: Parallels # confirm; GoReleaser can infer from the remote
     name: pdfm-mcp
-  prerelease: auto                 # v1.2.3-rc.1 => GitHub pre-release
+  prerelease: auto # v1.2.3-rc.1 => GitHub pre-release
   draft: false
   name_template: "pdfm-mcp {{ .Version }}"
+  # Appended to the bottom of every release body (goreleaser renders the
+  # body as header + changelog + footer; spec 013 section 2). Tag-pinned
+  # URLs: the tag points at the exact commit this release was built from.
+  # release.yml additionally publishes scripts/install.sh as an asset.
+  footer: |
+    ## Install
+
+    macOS, Apple silicon + Intel. The installer verifies the download
+    against this release's `checksums.txt`:
+
+    ```sh
+    curl -fsSL https://raw.githubusercontent.com/Parallels/pdfm-mcp/{{ .Tag }}/scripts/install.sh | bash
+    ```
+
+    Uninstall:
+
+    ```sh
+    curl -fsSL https://raw.githubusercontent.com/Parallels/pdfm-mcp/{{ .Tag }}/scripts/install.sh | bash -s -- --uninstall
+    ```
+
+    Other ways to install this release:
+    {{ if .Prerelease }}
+
+    - **Manual**: download `pdfm-mcp_{{ .Version }}_darwin_universal.tar.gz`, verify it against `checksums.txt` (`shasum -a 256 -c`), extract `pdfm-mcp` and put it on your PATH
+
+    This is a **pre-release** ({{ .Prerelease }}). Install this exact version:
+
+    ```sh
+    curl -fsSL https://raw.githubusercontent.com/Parallels/pdfm-mcp/{{ .Tag }}/scripts/install.sh | bash -s -- -v {{ .Version }}
+    ```
+
+    or let the installer pick the newest pre-release instead of the latest
+    stable one:
+
+    ```sh
+    curl -fsSL https://raw.githubusercontent.com/Parallels/pdfm-mcp/{{ .Tag }}/scripts/install.sh | bash -s -- --pre-release
+    ```
+
+    Homebrew and the Claude Desktop bundle are published for stable releases
+    only.
+    {{ else }}
+
+    - **Homebrew**: `brew tap Parallels/tap && brew install --cask pdfm-mcp`
+    - **Claude Desktop**: download the `pdfm-mcp-{{ .Version }}.mcpb` asset and double-click it
+    - **Manual**: download `pdfm-mcp_{{ .Version }}_darwin_universal.tar.gz`, verify it against `checksums.txt` (`shasum -a 256 -c`), extract `pdfm-mcp` and put it on your PATH
+    {{ end }}
 
 # ---------------------------------------------------------------------------
 # Homebrew cask (spec 014 section 4). Verified against GoReleaser 2.12.5:
@@ -106,16 +148,15 @@ release:
 # and commits it to the tap repo. Publishing stays gated on the
 # PUBLISH_HOMEBREW variable + stable tag in that job.
 #
-# `license` is a placeholder: GoReleaser only renders the stanza for a
-# known SPDX id, so it is omitted from the cask until Legal decides.
+# `license` is an SPDX id (MIT, see LICENSE).
 # ---------------------------------------------------------------------------
 homebrew_casks:
   - name: pdfm-mcp
     ids: [default]
     directory: Casks
-    homepage: "https://github.com/Parallels/pdfm-mcp"   # confirm
+    homepage: "https://github.com/Parallels/pdfm-mcp" # confirm
     description: "MCP server for controlling Parallels Desktop virtual machines"
-    license: "<SPDX id or 'Proprietary' as decided by Legal>"
+    license: "MIT"
     # No `binary:` field: it is deprecated in GoReleaser v2 (goreleaser
     # check fails on it) and its absence already defaults the cask's binary
     # to the cask name (pdfm-mcp), which is the executable in the archive.
@@ -123,8 +164,8 @@ homebrew_casks:
     # Required for the pipe to generate the cask at all, but unused with
     # skip_upload: true (the `tap` job in release.yml owns publishing).
     repository:
-      owner: Parallels          # confirm
-      name: homebrew-tap             # confirm
+      owner: Parallels # confirm
+      name: homebrew-tap # confirm
       branch: main
     # Single line on purpose, and short: GoReleaser emits each caveat line as
     # a bare string literal inside `caveats do ... end` and Homebrew only

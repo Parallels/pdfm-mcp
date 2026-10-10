@@ -5,13 +5,13 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
 )
 
 // VMSwitchSnapshotInput is the argument schema for the
 // parallels_vm_snapshot_switch tool.
 type VMSwitchSnapshotInput struct {
-	VMID       string `json:"vm_id,omitempty" jsonschema:"VM id or name to target"`
+	VMID       string `json:"vm_id,omitempty" jsonschema:"VM id or name to target: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	SnapshotID string `json:"snapshot_id" jsonschema:"snapshot id to revert to (with or without {} braces)"`
 	SkipResume bool   `json:"skip_resume,omitempty" jsonschema:"do not start the VM after the revert, even if the snapshot was taken while the VM was running"`
 	Password   string `json:"password,omitempty" jsonschema:"current encryption password — required only when the VM is encrypted, fed to prlctl over stdin and never logged"`

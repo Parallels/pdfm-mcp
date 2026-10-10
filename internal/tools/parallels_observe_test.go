@@ -14,9 +14,9 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/ocr"
-	"github.com/cjlapao/pdfm-mcp/internal/server"
-	"github.com/cjlapao/pdfm-mcp/internal/tools"
+	"github.com/Parallels/pdfm-mcp/internal/ocr"
+	"github.com/Parallels/pdfm-mcp/internal/server"
+	"github.com/Parallels/pdfm-mcp/internal/tools"
 )
 
 const obsSecret = "hunter2-SECRET"

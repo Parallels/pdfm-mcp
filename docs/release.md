@@ -8,8 +8,8 @@ Implements specs [013](specs/013-release-pipeline.md) (pipeline),
 One tag produces one signed, notarized, universal macOS binary on a GitHub
 Release. Every channel consumes that asset; nothing is rebuilt per channel.
 
-**Publication gate (spec 013 section 3).** The repo and its releases are
-internal by default. Public channels need explicit owner and Legal approval:
+**Publication gate (spec 013 section 3).** The repo is public. Downstream
+public channels still need explicit owner and Legal approval before first use:
 the registry job only runs when the repository variable `PUBLISH_PUBLIC` is
 `'true'`, and the Homebrew tap is only updated when `PUBLISH_HOMEBREW` is
 `'true'`. Release notes, archives and SBOMs must never contain security
@@ -18,7 +18,7 @@ findings, internal hostnames, VM names or customer data.
 ## Files
 
 | File | Purpose |
-|---|---|
+| --- | --- |
 | `.goreleaser.yaml` | build, universal binary, notarize, archive, checksums, SBOM, release, Homebrew cask |
 | `VERSION`, `CHANGELOG.md` | base SemVer and reviewed notes for each version |
 | `.github/workflows/create_release_pr.yml` | manual major/minor/patch bump and changelog PR to main |
@@ -61,7 +61,7 @@ using their `## Changelog` bullets or their title as a fallback. The
 Run **Release** from `main` and choose:
 
 | Input | Resolved tag | GitHub status | Downstream channels |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `canary` | `vX.Y.Z-canary.<workflow run number>` | prerelease | none |
 | `beta` | `vX.Y.Z-beta.<workflow run number>` | prerelease | none |
 | `production` | `vX.Y.Z` | stable | MCPB, gated tap and registry |
@@ -167,23 +167,22 @@ mcp-publisher status --status deprecated --all-versions --message "..." <name>
   published version.
 - Secret or confidential data exposed: rotate the secret first (section 7 of
   spec 013), then `status --status deleted --message "..."` the version and
-  report the incident to frank.stehberger@parallels.com or
-  joel.perezsanchez@parallels.com.
+  report the incident through Parallels' internal security process.
 - Asset removed or repo made private: `status --status deleted` the entry
   rather than leaving a dead link.
 
-## 7. Private repository mode (specs 014, 015)
+## 7. Private repository mode (specs 014, 015; not applicable while the repo is public)
 
 Anonymous downloads of private release assets return 404. Record the chosen
 option here before the first release: (1) approved public or intranet location
 for assets, (2) authenticated download with a read-only token (never pasted
 into chat or tickets), (3) fallback formula that builds from source.
-Chosen: `<decision pending>`.
+Chosen: n/a (repo is public, release assets download anonymously).
 
 ## 8. Secrets and variables inventory (names only)
 
 | Name | Kind | Holds |
-|---|---|---|
+| --- | --- | --- |
 | `MACOS_SIGN_P12` | secret (`release` env) | base64 Developer ID Application `.p12` |
 | `MACOS_SIGN_PASSWORD` | secret | `.p12` password |
 | `MACOS_NOTARY_KEY` | secret | base64 App Store Connect `.p8` key |
@@ -199,7 +198,7 @@ Chosen: `<decision pending>`.
 
 Owners and expiry dates live in the team password manager, never in the repo.
 If any value is pasted into a chat, issue or log, treat it as compromised,
-rotate it, and report it to the security contacts above.
+rotate it, and report it through Parallels' internal security process.
 
 Rotation: create the new credential, update the `release` environment secret,
 run a pre-release rehearsal tag, then revoke the old one.
@@ -227,16 +226,14 @@ See the Install draft supplied with this work; Homebrew:
 Every `<...>` placeholder and unverified assumption:
 
 | Item | Where | Owner |
-|---|---|---|
-| Go module path vs remote org (`github.com/cjlapao/pdfm-mcp` vs `Parallels/pdfm-mcp`) | ldflags in `.goreleaser.yaml`, `MODULE` in Makefile | release owner |
+| --- | --- | --- |
 | Apple Developer team, Developer ID cert, notary API key, the five `MACOS_*` secrets, `release` environment with reviewers | GitHub | IT / Security |
-| `LICENSE` file and SPDX id (Legal). Archive glob `LICEN[CS]E*` and `build-mcpb.sh` tolerate its absence | `.goreleaser.yaml` cask `license`, `packaging/mcpb/manifest.json.tmpl` `license` | Legal |
+| MIT `LICENSE` added as an interim choice; Legal to confirm the license and copyright holder line | `LICENSE`, `.goreleaser.yaml`, `packaging/mcpb/manifest.json.tmpl` | Legal |
 | Tap repo `Parallels/homebrew-tap` creation, bot email `<bot-email>`, `HOMEBREW_TAP_TOKEN`, `PUBLISH_HOMEBREW` | `release.yml` `tap` job, `.goreleaser.yaml` | release owner |
 | Brand-approved `packaging/mcpb/icon.png` (512x512). A neutral placeholder is committed so dev builds work; replace before a public release | packaging | brand/Legal |
-| Registry name and auth (OIDC or DNS), `MCP_SERVER_NAME`, `PUBLISH_PUBLIC` approval | repo vars, spec 016 | owner + Legal |
+| Registry: GitHub OIDC, name `io.github.Parallels/pdfm-mcp` (confirm owner casing with `mcp-publisher validate`), set `MCP_SERVER_NAME`, `PUBLISH_PUBLIC` approval; keep `mcp-publisher` >= 1.7.9 | repo vars, spec 016 | owner + Legal |
 | `mcp-publisher` pin: v1.8.1 verified as the candidate (2026-10-09; linux amd64 sha256 in the official `registry_1.8.1_checksums.txt`, recorded in `release.yml`); a human must review and paste the values into the `registry` job env | `release.yml` `registry` job env | release owner |
 | `AMPLITUDE_API_KEY` in the `release` environment (Amplitude project key) before the first release that should report usage; the run warns loudly when it is absent | `release.yml` `goreleaser` job | release owner |
-| Private-repo asset distribution option | section 7 | owner |
 | Verify action majors: `anchore/sbom-action/download-syft@v0`, `actions/attest-build-provenance@v3`, `actions/setup-node@v5` | workflows | implementer |
 | `${__dirname}` command form, empty `user_config` behaviour, exec bit survival in Claude Desktop | spec 015 section 10, QA 015 | QA |
 | Built-in OCR (spec 022, supersedes the spec-020 helper wiring): Apple Vision is compiled into `pdfm-mcp` via cgo; the Go build (CI + release) runs on `macos-latest`, the archive/cask/MCPB carry a single binary. Remaining: first real release run with the Developer ID P12 + App Store Connect key, then `codesign --verify --strict` + Gatekeeper check on the universal binary | `release.yml`, `ci.yml`, `.goreleaser.yaml`, `scripts/build-mcpb.sh` | release owner |

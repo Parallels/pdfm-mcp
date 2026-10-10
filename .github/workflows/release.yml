@@ -221,6 +221,13 @@ jobs:
         continue-on-error: true
         with:
           subject-path: dist/*.tar.gz
+      # The install script is a release asset (spec 013 section 2); the
+      # release body links the tag-pinned raw URL, the asset is the
+      # downloadable copy of the same file. --clobber: re-runs replace it.
+      - name: Publish the install script as a release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ needs.prepare.outputs.release_tag }}" scripts/install.sh --clobber
       # The cask is generated here and published by the `tap` job (spec 014):
       # GoReleaser's template fails `brew style`, so it must be normalized
       # and audited before it is committed to the tap.

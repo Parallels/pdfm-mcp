@@ -7,9 +7,9 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/keys"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/keys"
 )
 
 // KeyEventArg is one element of an events sequence — the documented
@@ -27,7 +27,7 @@ type KeyEventArg struct {
 
 // SendKeyInput is the argument schema of parallels_vm_send_key.
 type SendKeyInput struct {
-	VMID     string        `json:"vm_id,omitempty" jsonschema:"VM id or name to send the key event(s) to"`
+	VMID     string        `json:"vm_id,omitempty" jsonschema:"VM id or name to send the key event(s) to: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	Key      string        `json:"key,omitempty" jsonschema:"single key: name (enter, f5, a, left_shift, …) or numeric code; omit when using events"`
 	Scancode int           `json:"scancode,omitempty" jsonschema:"single key by scan code (0-255); alternative to key"`
 	Event    string        `json:"event,omitempty" jsonschema:"press or release; omit for a tap (press+release)"`

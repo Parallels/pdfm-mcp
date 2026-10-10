@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/models"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/models"
 )
 
 func TestClassificationTable(t *testing.T) {

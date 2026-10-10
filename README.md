@@ -82,7 +82,7 @@ Use an absolute path to the binary.
 
 ```sh
 make claude-add   # or:
-claude mcp add pdfm-mcp -- /Users/cjlapao/code/GitHub/pdfm-mcp/bin/pdfm-mcp
+claude mcp add pdfm-mcp -- /path/to/pdfm-mcp/bin/pdfm-mcp
 claude mcp list
 ```
 
@@ -96,7 +96,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "pdfm-mcp": {
-      "command": "/Users/cjlapao/code/GitHub/pdfm-mcp/bin/pdfm-mcp",
+      "command": "/path/to/pdfm-mcp/bin/pdfm-mcp",
       "args": ["--log-level", "debug"],
       "env": { "PDFM_MCP_LOG_FILE": "/tmp/pdfm-mcp.log" }
     }

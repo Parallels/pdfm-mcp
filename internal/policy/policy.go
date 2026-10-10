@@ -48,6 +48,7 @@ const SequenceTool = "parallels_vm_sequence"
 var classes = map[string]Class{
 	// Fleet / observation.
 	"parallels_list_vms":           ClassRead,
+	"parallels_search_vms":         ClassRead,
 	"parallels_vm_info":            ClassRead,
 	"parallels_vm_capture":         ClassRead,
 	"parallels_vm_observe":         ClassRead,

@@ -6,7 +6,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
 )
 
 // VMChangePasswordInput is the argument schema for the
@@ -14,7 +14,7 @@ import (
 // schema stays permissive; the handler requires both (the service
 // validates length and character set).
 type VMChangePasswordInput struct {
-	VMID            string `json:"vm_id,omitempty" jsonschema:"VM id or name to target"`
+	VMID            string `json:"vm_id,omitempty" jsonschema:"VM id or name to target: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	CurrentPassword string `json:"current_password,omitempty" jsonschema:"current encryption password, 1-256 printable characters, fed to prlctl over stdin and never logged"`
 	NewPassword     string `json:"new_password,omitempty" jsonschema:"new encryption password, 1-256 printable characters, fed to prlctl over stdin and never logged"`
 }

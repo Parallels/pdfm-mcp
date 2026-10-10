@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/imaging"
+	"github.com/Parallels/pdfm-mcp/internal/imaging"
 )
 
 // runWaitUntil polls the capture action until the until condition holds or

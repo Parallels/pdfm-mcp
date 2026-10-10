@@ -21,7 +21,7 @@ import tempfile
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-MODULE = "github.com/cjlapao/pdfm-mcp"
+MODULE = "github.com/Parallels/pdfm-mcp"
 
 
 def build_qa_bin(name, key):

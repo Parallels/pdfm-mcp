@@ -12,7 +12,7 @@ import (
 	"github.com/amplitude/analytics-go/amplitude"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/version"
+	"github.com/Parallels/pdfm-mcp/internal/version"
 )
 
 // Event names (spec 024 section 3), format {{SERVICE}}::{{TOOL}}. Tool

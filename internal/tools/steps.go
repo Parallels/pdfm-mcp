@@ -1,7 +1,7 @@
 package tools
 
 import (
-	"github.com/cjlapao/pdfm-mcp/internal/orchestrator"
+	"github.com/Parallels/pdfm-mcp/internal/orchestrator"
 )
 
 // RegisterSteps registers every parallels_vm_* tool — except

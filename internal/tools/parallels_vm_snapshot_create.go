@@ -5,13 +5,13 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
 )
 
 // VMCreateSnapshotInput is the argument schema for the
 // parallels_vm_snapshot_create tool.
 type VMCreateSnapshotInput struct {
-	VMID        string `json:"vm_id,omitempty" jsonschema:"VM id or name to target"`
+	VMID        string `json:"vm_id,omitempty" jsonschema:"VM id or name to target: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	Name        string `json:"name,omitempty" jsonschema:"snapshot name, 1-128 printable characters; omitted = prlctl stores an empty name"`
 	Description string `json:"description,omitempty" jsonschema:"snapshot description, up to 512 printable characters"`
 	Password    string `json:"password,omitempty" jsonschema:"current encryption password — required only when the VM is encrypted, fed to prlctl over stdin and never logged"`

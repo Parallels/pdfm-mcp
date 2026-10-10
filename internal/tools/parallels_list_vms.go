@@ -6,8 +6,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/models"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/models"
 )
 
 // ListVmsInput is the argument schema for the parallels_list_vms tool.
@@ -17,7 +17,7 @@ type ListVmsInput struct {
 
 // ListVmsOutput is the structured result of the parallels_list_vms tool.
 type ListVmsOutput struct {
-	Vms       []models.VM `json:"vms" jsonschema:"the virtual machines with full prlctl detail; only the target VM in VM mode; restricted to --allow-vms when set"`
+	Vms       []models.VM `json:"vms" jsonschema:"the virtual machines with full prlctl detail; only the target VM in VM mode; restricted to --allow-vms when set; each entry has an ID (UUID) and a Name (display name, which may be empty) - either value works as the vm_id argument of every other tool"`
 	Count     int         `json:"count" jsonschema:"number of VMs in the list"`
 	FetchedAt string      `json:"fetched_at" jsonschema:"RFC3339 timestamp of the last cache refresh"`
 	Source    string      `json:"source" jsonschema:"cache when served from memory, refreshed when prlctl was re-run for this call"`
@@ -60,7 +60,7 @@ func ListVms(ctx context.Context, _ *mcp.CallToolRequest, in ListVmsInput) (*mcp
 func RegisterParallelsListVms(s *mcp.Server) {
 	t := &mcp.Tool{
 		Name:         "parallels_list_vms",
-		Description:  "Lists Parallels Desktop virtual machines with full configuration (prlctl list -a -i), served from the in-memory cache. When the server runs in VM mode (started with --vm-id) only the target VM is returned.",
+		Description:  "Lists Parallels Desktop virtual machines with full configuration (prlctl list -a -i), served from the in-memory cache. When the server runs in VM mode (started with --vm-id) only the target VM is returned. Every VM has an ID (UUID) and a Name (display name; Name can be empty for some VMs). Either value can be passed as the vm_id argument of any VM-scoped tool - use the ID when the name is empty or ambiguous. If you only need to locate one VM, prefer parallels_search_vms: this tool's full-detail output is large and may be truncated by the client.",
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: true},
 		OutputSchema: outputSchemaFor[ListVmsOutput]("parallels_list_vms"),
 	}

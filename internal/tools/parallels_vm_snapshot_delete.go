@@ -5,13 +5,13 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
 )
 
 // VMDeleteSnapshotInput is the argument schema for the
 // parallels_vm_snapshot_delete tool.
 type VMDeleteSnapshotInput struct {
-	VMID       string `json:"vm_id,omitempty" jsonschema:"VM id or name to target"`
+	VMID       string `json:"vm_id,omitempty" jsonschema:"VM id or name to target: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	SnapshotID string `json:"snapshot_id" jsonschema:"snapshot id to delete (with or without {} braces)"`
 	Children   bool   `json:"children,omitempty" jsonschema:"also delete all child snapshots (prlctl -c); deleting the current snapshot reverts the VM to its parent's state"`
 	Password   string `json:"password,omitempty" jsonschema:"current encryption password — required only when the VM is encrypted, fed to prlctl over stdin and never logged"`

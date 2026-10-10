@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/imaging"
+	"github.com/Parallels/pdfm-mcp/internal/imaging"
 )
 
 func seconds(f float64) time.Duration { return time.Duration(f * float64(time.Second)) }

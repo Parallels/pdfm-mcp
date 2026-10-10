@@ -9,9 +9,9 @@ import json, os, subprocess, sys, threading, time
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 BIN = os.path.join(ROOT, "bin", "pdfm-mcp")
 VM = "empty_catalog_test"
-PW = "qa-wire-2026-X"
-OUT = os.path.join(ROOT, "docs/qa/021-wire-transcript.jsonl")
-ERR = os.path.join(ROOT, "docs/qa/021-wire-server.stderr")
+PW = os.environ["PDFM_QA_VM_PASSWORD"]  # throwaway QA VM password; never commit it
+OUT = os.path.join(ROOT, "bin/021-wire-transcript.jsonl")
+ERR = os.path.join(ROOT, "bin/021-wire-server.stderr")
 
 proc = subprocess.Popen(
     [BIN], stdin=subprocess.PIPE, stdout=subprocess.PIPE,

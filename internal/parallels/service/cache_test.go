@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/models"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/models"
 )
 
 func seedCache(t *testing.T) *vmCache {

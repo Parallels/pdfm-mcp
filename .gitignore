@@ -24,3 +24,6 @@ go.work.sum
 *.log
 .env
 .env.*
+
+__pycache__/
+*.pyc

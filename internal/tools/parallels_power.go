@@ -3,13 +3,12 @@ package tools
 import (
 	"context"
 	"errors"
-	"strings"
 
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
 )
 
 // PowerMode is how a power tool resolves its target VM.
@@ -26,12 +25,12 @@ const (
 
 // PowerVMInput is the argument schema of the simple power tools.
 type PowerVMInput struct {
-	VMID string `json:"vm_id,omitempty" jsonschema:"VM id or name to target"`
+	VMID string `json:"vm_id,omitempty" jsonschema:"VM id or name to target: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 }
 
 // PowerStopInput is the argument schema of parallels_vm_stop.
 type PowerStopInput struct {
-	VMID      string `json:"vm_id,omitempty" jsonschema:"VM id or name to target"`
+	VMID      string `json:"vm_id,omitempty" jsonschema:"VM id or name to target: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	Kill      bool   `json:"kill,omitempty" jsonschema:"force a hard shutdown (prlctl stop --kill)"`
 	DropState bool   `json:"drop_state,omitempty" jsonschema:"reset a suspended VM to a full shutdown so it boots afresh next time (prlctl stop --drop-state)"`
 }
@@ -46,8 +45,12 @@ type PowerOutput struct {
 // fleet mode requires it, VM mode uses the configured target and rejects an
 // explicit value (a single-VM-scoped server must not touch other VMs). The
 // VM allow-list (--allow-vms) is enforced here for every VM-scoped tool.
+//
+// The reference is unquoted first (parallels.UnquoteVMRef, spec 025) so a
+// name the model shell-quoted still authorizes against the allow-list and
+// still reaches prlctl as the plain name.
 func resolvePowerTarget(svc interfaces.ParallelsService, explicit string) (string, error) {
-	explicit = strings.TrimSpace(explicit)
+	explicit = parallels.UnquoteVMRef(explicit)
 	if explicit != "" {
 		if svc.VMID() != "" {
 			return "", errors.New("vm_id must be omitted: this server targets a specific VM (started with --vm-id)")
@@ -106,7 +109,7 @@ func powerInputSchema[T any](mode PowerMode) *jsonschema.Schema {
 // powerDescription builds the mode-aware tool description.
 func powerDescription(what string, mode PowerMode) string {
 	if mode == PowerFleet {
-		return what + " The vm_id argument (a VM id or name) is required."
+		return what + " The vm_id argument is required: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; names with spaces are fine as-is, no quotes needed."
 	}
 	return what + " Targets the VM configured with --vm-id; the vm_id argument must be omitted."
 }

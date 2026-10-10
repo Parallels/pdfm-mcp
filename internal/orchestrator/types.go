@@ -14,7 +14,7 @@ import (
 
 // SequenceInput is the argument schema of parallels_vm_sequence.
 type SequenceInput struct {
-	VMID           string `json:"vm_id,omitempty" jsonschema:"VM id or name; required in fleet mode, omit in VM mode"`
+	VMID           string `json:"vm_id,omitempty" jsonschema:"VM id or name (required in fleet mode, omit in VM mode): the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	Steps          []Step `json:"steps" jsonschema:"ordered steps, 1 to 50"`
 	OnError        string `json:"on_error,omitempty" jsonschema:"stop (default) or continue when a step errors"`
 	TimeoutSeconds int    `json:"timeout_seconds,omitempty" jsonschema:"total runtime cap in seconds (1-900, default 120)"`

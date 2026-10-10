@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
 )
 
 // powerTimeout bounds a single power command. Guest shutdowns (stop,
@@ -18,11 +18,28 @@ const powerTimeout = 180 * time.Second
 // names are short — anything longer is a mistake or an attack.
 const MaxVMRefLength = 256
 
-// ValidateVMRef trims and validates a VM id/name reference that will be
-// passed to prlctl as a single argv element (never through a shell).
-// The same rule applies at startup (--vm-id) and per call (tool arguments).
-func ValidateVMRef(ref string) (string, error) {
+// UnquoteVMRef trims surrounding whitespace and strips ONE pair of matching
+// surrounding double quotes from a VM id/name reference. The reference is
+// always a single argv element passed to prlctl — there is no shell — so
+// names with spaces need no quoting at all; this helper exists only
+// because LLM clients habitually quote shell-style (spec 025). It is
+// applied at the earliest point the reference enters the server
+// (resolvePowerTarget, --vm-id validation) and again inside ValidateVMRef
+// as defense in depth for direct service callers.
+func UnquoteVMRef(ref string) string {
 	ref = strings.TrimSpace(ref)
+	if len(ref) >= 2 && ref[0] == '"' && ref[len(ref)-1] == '"' {
+		ref = strings.TrimSpace(ref[1 : len(ref)-1])
+	}
+	return ref
+}
+
+// ValidateVMRef validates a VM id/name reference that will be passed to
+// prlctl as a single argv element (never through a shell). The same rule
+// applies at startup (--vm-id) and per call (tool arguments). Surrounding
+// whitespace and one pair of double quotes are tolerated via UnquoteVMRef.
+func ValidateVMRef(ref string) (string, error) {
+	ref = UnquoteVMRef(ref)
 	if ref == "" {
 		return "", errors.New("VM id or name is empty")
 	}

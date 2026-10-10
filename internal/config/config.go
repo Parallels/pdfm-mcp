@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
-	"github.com/cjlapao/pdfm-mcp/internal/policy"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/policy"
 )
 
 // DefaultVMCacheTTL is how long the Parallels VM list cache stays fresh.
@@ -92,7 +92,10 @@ func Load(args []string, stderr io.Writer) (Config, error) {
 	if err := validateVMID(vmID); err != nil {
 		return cfg, err
 	}
-	cfg.VMID = strings.TrimSpace(vmID)
+	// Store the normalized form (trimmed, one pair of surrounding quotes
+	// stripped) so the configured target is always what prlctl receives
+	// (spec 025).
+	cfg.VMID = parallels.UnquoteVMRef(vmID)
 
 	cfg.ReadOnly = readOnly
 	if cfg.AllowTools, err = policy.ParseToolList(allowTools); err != nil {

@@ -1,4 +1,4 @@
-module github.com/cjlapao/pdfm-mcp
+module github.com/Parallels/pdfm-mcp
 
 go 1.26.0
 

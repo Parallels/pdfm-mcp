@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
 )
 
 // cloneTimeout bounds one prlctl clone invocation. Clone is the only op

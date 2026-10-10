@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
 )
 
 // powerService initializes the singleton with a fake runner/PATH and the
@@ -84,6 +84,71 @@ func TestPowerUnknownOp(t *testing.T) {
 	svc := powerService(t, &fakeRunner{}, "")
 	if _, err := svc.Power(context.Background(), interfaces.PowerOp("exec"), "guest", false, false); err == nil || !strings.Contains(err.Error(), "unknown power operation") {
 		t.Fatalf("err = %v, want unknown power operation", err)
+	}
+}
+
+// TestUnquoteVMRef pins the LLM shell-quoting tolerance (spec 025): one
+// pair of surrounding double quotes is stripped, nothing more.
+func TestUnquoteVMRef(t *testing.T) {
+	cases := []struct {
+		in   string
+		want string
+	}{
+		{in: "My VM", want: "My VM"},             // plain: unchanged
+		{in: "  My VM  ", want: "My VM"},         // trimmed
+		{in: `"My VM"`, want: "My VM"},           // one pair of quotes: stripped
+		{in: `  "My  VM"  `, want: "My  VM"},     // surrounding + inner spaces
+		{in: `""a""`, want: `"a"`},               // exactly one outer pair
+		{in: `"`, want: `"`},                     // a lone quote: unchanged
+		{in: `"unbalanced`, want: `"unbalanced`}, // unbalanced: unchanged
+		{in: `a"b`, want: `a"b`},                 // interior quote: unchanged
+		{in: `""`, want: ""},                     // quotes around nothing
+		{in: "", want: ""},
+	}
+	for _, c := range cases {
+		if got := UnquoteVMRef(c.in); got != c.want {
+			t.Errorf("UnquoteVMRef(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
+// TestValidateVMRef pins the id/name reference contract (spec 025): plain
+// names with spaces are valid as-is, and one pair of surrounding double
+// quotes (an LLM shell-quoting habit) is tolerated and stripped.
+func TestValidateVMRef(t *testing.T) {
+	cases := []struct {
+		in     string
+		want   string
+		isErr  bool
+		errSub string
+	}{
+		{in: "My-VM-UUID", want: "My-VM-UUID"},
+		{in: "  My VM  ", want: "My VM"},                   // spaces fine, trimmed
+		{in: `"My VM"`, want: "My VM"},                     // one pair of quotes: stripped
+		{in: `  "My  VM"  `, want: "My  VM"},               // quotes + surrounding/inner spaces
+		{in: `""`, isErr: true, errSub: "empty"},           // quotes around nothing
+		{in: `"`, isErr: false, want: `"`},                 // a lone printable char: passed through, prlctl will not find it
+		{in: `"balanced`, isErr: false, want: `"balanced`}, // unbalanced: no stripping
+		{in: `"a"b"`, want: `a"b`},                         // exactly one outer pair stripped
+		{in: "bad\x00name", isErr: true, errSub: "non-printable"},
+		{in: strings.Repeat("a", MaxVMRefLength+1), isErr: true, errSub: "longer than"},
+		{in: "   ", isErr: true, errSub: "empty"},
+	}
+	for _, c := range cases {
+		got, err := ValidateVMRef(c.in)
+		if c.isErr {
+			if err == nil || (c.errSub != "" && !strings.Contains(err.Error(), c.errSub)) {
+				t.Errorf("ValidateVMRef(%q) err = %v, want containing %q", c.in, err, c.errSub)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("ValidateVMRef(%q) unexpected err: %v", c.in, err)
+			continue
+		}
+		if got != c.want {
+			t.Errorf("ValidateVMRef(%q) = %q, want %q", c.in, got, c.want)
+		}
 	}
 }
 
