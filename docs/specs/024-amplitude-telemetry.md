@@ -160,6 +160,8 @@ events.
   logs a `::warning::` when it is absent so a keyless release is visible but
   never blocks. The secret lives in the `release` environment (inventory in
   `docs/release.md` section 8 + open items). `ci.yml` snapshot builds are
-  intentionally keyless. All release channels (canary/beta/production)
+  intentionally keyless — they set `AMPLITUDE_API_KEY: ""` because the
+  GoReleaser ldflags template errors on a *missing* env key (an empty one
+  builds a silent binary). All release channels (canary/beta/production)
   report by default; to keep a channel silent, unset the secret for that
   run's environment.

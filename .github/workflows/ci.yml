@@ -67,8 +67,10 @@ jobs:
       - uses: anchore/sbom-action/download-syft@v0
         if: steps.changes.outputs.release == 'true'
       # Snapshot builds are throwaway artifacts: they intentionally do NOT
-      # receive AMPLITUDE_API_KEY, so their telemetry stays silent (spec 024).
-      # Only release.yml bakes the key in, from the release secret.
+      # receive the real AMPLITUDE_API_KEY, so their telemetry stays silent
+      # (spec 024). The variable is set to empty (not omitted) because the
+      # .goreleaser.yaml ldflags template errors on a *missing* env key.
+      # Only release.yml bakes the real key in, from the release secret.
       - uses: goreleaser/goreleaser-action@v7
         if: steps.changes.outputs.release == 'true'
         with:
@@ -76,6 +78,7 @@ jobs:
           args: release --snapshot --clean --skip=publish,notarize,announce
         env:
           GORELEASER_CURRENT_TAG: v${{ steps.version.outputs.version }}
+          AMPLITUDE_API_KEY: ""
       - name: mcpb validate (needs icon + pinned mcpb version)
         if: steps.changes.outputs.packaging == 'true' && hashFiles('packaging/mcpb/icon.png') != ''
         run: |
