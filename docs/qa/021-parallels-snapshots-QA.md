@@ -105,9 +105,8 @@ transmitted by automated tests.
     after each phase).
 
 ### 3. Live wire QA (executed 2026-10-09, `bin/pdfm-mcp` fleet mode, MCP
-tools/call over stdio — driver `test/e2e/wire_qa_021.py`, transcript
-`docs/qa/021-wire-transcript.jsonl`, server stderr
-`docs/qa/021-wire-server.stderr`)
+tools/call over stdio — driver `test/e2e/wire_qa_021.py`; the raw transcript and server stderr
+contained local session data and are not kept in the repo)
 
 23-call cycle on `empty_catalog_test`, all green:
 

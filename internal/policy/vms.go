@@ -1,6 +1,6 @@
 package policy
 
-import "github.com/cjlapao/pdfm-mcp/internal/parallels/models"
+import "github.com/Parallels/pdfm-mcp/internal/parallels/models"
 
 // VMAllowList restricts which VMs the tools may address. A nil or empty
 // list means unrestricted.

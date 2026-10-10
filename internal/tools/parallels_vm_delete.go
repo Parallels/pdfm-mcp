@@ -7,14 +7,14 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
 )
 
 // DeleteInput is the argument schema of parallels_vm_delete. confirm is
 // required in both modes and must repeat the resolved VM ref exactly —
 // the tool's irreversible-operation safety gate.
 type DeleteInput struct {
-	VMID    string `json:"vm_id,omitempty" jsonschema:"VM id or name to delete; the VM and all its files are removed permanently"`
+	VMID    string `json:"vm_id,omitempty" jsonschema:"VM id or name to delete (the VM and all its files are removed permanently): the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	Confirm string `json:"confirm" jsonschema:"safety gate: must be exactly the same VM id or name as vm_id (or the configured target in VM mode)"`
 }
 

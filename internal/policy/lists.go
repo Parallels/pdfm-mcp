@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
 )
 
 // Limits on the configured lists.

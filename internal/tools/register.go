@@ -3,7 +3,7 @@ package tools
 import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/telemetry"
+	"github.com/Parallels/pdfm-mcp/internal/telemetry"
 )
 
 // register adds a tool with per-call telemetry instrumentation (spec 024).

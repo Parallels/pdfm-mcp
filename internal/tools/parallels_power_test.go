@@ -10,8 +10,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/server"
-	"github.com/cjlapao/pdfm-mcp/internal/tools"
+	"github.com/Parallels/pdfm-mcp/internal/server"
+	"github.com/Parallels/pdfm-mcp/internal/tools"
 )
 
 // powerListFn answers list commands with the sample JSON and power commands
@@ -101,6 +101,22 @@ func TestPowerTargetResolution(t *testing.T) {
 			}
 			_, args := runner.lastCall()
 			if want := []string{tc.op, "guest-x"}; !slices.Equal(args, want) {
+				t.Fatalf("args = %v, want %v", args, want)
+			}
+		})
+
+		t.Run(tc.name+"/fleet/quoted-name-is-unquoted", func(t *testing.T) {
+			runner := &testRunner{}
+			initParallelsForTest(t, runner, []string{"prlctl", "prlsrvctl"}, "")
+			out, err := tc.call(` "guest x" `) // spec 025: LLM shell-quoting habit
+			if err != nil {
+				t.Fatal(err)
+			}
+			if out.VMID != "guest x" {
+				t.Fatalf("out.VMID = %q, want %q", out.VMID, "guest x")
+			}
+			_, args := runner.lastCall()
+			if want := []string{tc.op, "guest x"}; !slices.Equal(args, want) {
 				t.Fatalf("args = %v, want %v", args, want)
 			}
 		})

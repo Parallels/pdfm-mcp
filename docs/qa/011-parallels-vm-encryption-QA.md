@@ -88,7 +88,7 @@ All steps passed; the VM was left exactly as found
      clean tool error "Failed to authorise current session … password …
      invalid" (confirms encrypted dry-runs require the password).
   3. `decrypt {password: wrong}` → clean tool error, VM stayed encrypted.
-  4. `change_password {current: A, new: B}` → "The password has been
+  4. `change_encryption_password {current: A, new: B}` → "The password has been
      successfully changed."
   5. `decrypt {password: B}` → "The virtual machine has been
      successfully decrypted."; `info` → `Encrypted: "no"`.

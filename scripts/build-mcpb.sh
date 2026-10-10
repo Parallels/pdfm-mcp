@@ -13,6 +13,7 @@
 #   MCPB_ALLOW_THIN=1     accept a non-universal binary (dev builds only)
 #   MCPB_STRICT=1         fail while <placeholder> values remain in the
 #                         manifest (the release workflow sets this)
+#   MCPB_TEMPLATE         TEST ONLY: alternate manifest template path
 #   MCPB_SKIP_PACK=1      TEST ONLY: skip npx validate/pack and zip with
 #                         python3 instead. The result is NOT validated.
 set -euo pipefail
@@ -40,7 +41,7 @@ sha256_of() {
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 root=$(cd "$script_dir/.." && pwd)
-tmpl="$root/packaging/mcpb/manifest.json.tmpl"
+tmpl=${MCPB_TEMPLATE:-$root/packaging/mcpb/manifest.json.tmpl}
 [[ -f $tmpl ]] || die "manifest template not found"
 icon=${MCPB_ICON:-$root/packaging/mcpb/icon.png}
 [[ -f $icon ]] || die "icon not found (packaging/mcpb/icon.png is a brand-approved asset that must be supplied, or set MCPB_ICON)"

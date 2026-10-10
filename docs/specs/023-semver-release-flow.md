@@ -4,7 +4,7 @@
 |---|---|
 | Status | Implemented (local verification complete 2026-10-10; GitHub signing/publication rehearsal pending release owner) |
 | Scope | Version file, release PR workflow, release channel selection, changelog, release guards, CI and runbook |
-| Reference | `/Users/cjlapao/code/GitHub/plai/PLAI-client-agent`: `create_release_pr.yml`, `release.yml`, `scripts/version.sh` |
+| Reference | an internal Parallels release-flow reference: `create_release_pr.yml`, `release.yml`, `scripts/version.sh` |
 
 ## Goal
 

@@ -54,6 +54,20 @@ func TestLoadVMIDTrimsWhitespace(t *testing.T) {
 	}
 }
 
+// TestLoadVMIDStripsQuotes pins the spec 025 normalization: an over-quoted
+// --vm-id (an LLM shell-quoting habit) is stored unquoted so prlctl always
+// receives the plain name.
+func TestLoadVMIDStripsQuotes(t *testing.T) {
+	clearEnv(t)
+	cfg, err := Load([]string{"--vm-id", `  "my vm"  `}, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.VMID != "my vm" {
+		t.Fatalf("VMID = %q, want %q", cfg.VMID, "my vm")
+	}
+}
+
 func TestLoadVMIDValidation(t *testing.T) {
 	clearEnv(t)
 	for _, ok := range []string{"90f90e2b-e19f-4429-86b3-b5146bc860d4", "ubuntu_github_builder", ""} {

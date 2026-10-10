@@ -4,7 +4,7 @@
 |---|---|
 | Status | Implemented |
 | Audience | Implementing agents / engineers |
-| Scope | Three VM-scoped tools wrapping the Parallels encryption lifecycle: `parallels_vm_encrypt`, `parallels_vm_decrypt`, `parallels_vm_change_password`. Passwords are fed to prlctl over stdin (never argv, never logs). |
+| Scope | Three VM-scoped tools wrapping the Parallels encryption lifecycle: `parallels_vm_encrypt`, `parallels_vm_decrypt`, `parallels_vm_change_encryption_password`. Passwords are fed to prlctl over stdin (never argv, never logs). |
 | Depends on | 002 (module, cache, mode contract), 003 (power pattern: resolvePowerTarget, cache invalidation) |
 | Out of scope | Encrypted-VM boot/restore flows, `prlsrvctl` server tools, snapshots, key management |
 
@@ -39,12 +39,12 @@ scriptable through the existing `CommandRunner.RunStdin`.
    fleet **requires** `vm_id`; VM mode targets `--vm-id` and rejects an
    explicit `vm_id`.
 3. Passwords reach prlctl only via stdin: `encrypt`/`decrypt` send one
-   line, `change_password` sends two lines (`current\nnew\n`). Passwords
+   line, `change_encryption_password` sends two lines (`current\nnew\n`). Passwords
    never appear in argv, in slog output, or in error messages built by
    this server.
 4. `password` is required for encrypt/decrypt **except** with
    `dry_run: true`; `current_password` and `new_password` are both
-   required for change_password. Passwords are validated: non-empty,
+   required for change_encryption_password. Passwords are validated: non-empty,
    printable ASCII, ≤ 256 chars (no trimming — spaces are significant).
 5. On success the VM cache is invalidated (the `Security.Encrypted`
    field changed).
@@ -63,6 +63,7 @@ scriptable through the existing `CommandRunner.RunStdin`.
 | Mode contract | Standard: `powerInputSchema` + `resolvePowerTarget`, registered in both modes | Consistency with every other VM-scoped tool |
 | Sequence steps | All three registered in `tools.RegisterSteps` (VM-scoped) | Repo rule; the drift guard enforces it. Steps may carry password args — the caller's responsibility |
 | Annotations | `ReadOnlyHint: false`, `DestructiveHint: true`, `IdempotentHint: false`, `OpenWorldHint: true` for all three | Encrypt locks data behind a password; decrypt irreversibly removes the lock once the old password is forgotten; change-passwd invalidates the current password |
+| Tool rename (2026-10-10) | `parallels_vm_change_password` → `parallels_vm_change_encryption_password`; the description now states explicitly that this is a disk-encryption password, not a guest OS/account/remote-desktop password | Live observation with a lower-capability model: it invoked the bare-named tool while asked to change a power state / guest password — the name reads as a guest account password, but the tool only touches the disk-encryption password. No alias: the project is pre-1.0, MCP clients discover tool names at runtime, and the ambiguity was worse than a rename |
 
 ## 3. Repository layout (delta)
 
@@ -75,10 +76,10 @@ internal/
 │       ├── encrypt.go                # service methods (new file)
 │       └── encrypt_test.go           # service-level: argv, stdin payload, not-logged, cache invalidation
 ├── tools/
-│   ├── descriptions.go               # + descVMEncrypt / descVMDecrypt / descVMChangePassword
+│   ├── descriptions.go               # + descVMEncrypt / descVMDecrypt / descVMChangeEncryptionPassword
 │   ├── parallels_vm_encrypt.go       # tool + Register (both modes)
 │   ├── parallels_vm_decrypt.go
-│   ├── parallels_vm_change_password.go
+│   ├── parallels_vm_change_encryption_password.go
 │   ├── parallels_encrypt_test.go     # handler + protocol tests (both modes, dry-run, validation)
 │   └── steps.go                      # + 3 actions in RegisterSteps
 ├── server/server.go                  # register all three in both modes
@@ -112,7 +113,7 @@ ChangePasswd(ctx context.Context, vmRef, currentPassword, newPassword string) (s
 ## 5. Tool layer
 
 - `VMEncryptInput{VMID, Password string, DryRun bool}`; same shape for
-  decrypt; `VMChangePasswordInput{VMID, CurrentPassword, NewPassword
+  decrypt; `VMChangeEncryptionPasswordInput{VMID, CurrentPassword, NewPassword
   string}` (no omitempty on the secret fields → always required).
 - Handler: `resolvePowerTarget` → service call →
   `VMEncryptOutput{DryRun bool, Output string}` (trimmed prlctl stdout).
@@ -169,7 +170,7 @@ decrypt → change-passwd → decrypt → verify `Security.Encrypted: no`).
    in VM mode: the schema stays permissive, the handler rejects a real
    run with an empty password ("password is required for this
    operation (only a dry_run call may omit it)") before prlctl runs.
-   `change_password` is analogous for both fields.
+   `change_encryption_password` is analogous for both fields.
 2. **Dry-runs on an *encrypted* VM require the current password.**
    Live verification showed both `encrypt --dry-run` and
    `decrypt --dry-run` fail with "The password you specified is
@@ -193,3 +194,9 @@ decrypt → change-passwd → decrypt → verify `Security.Encrypted: no`).
    (a string whose `TrimSpace` is empty), while still not trimming
    legitimate values — a spaces-only password is a near-certain
    mistake, and it would be a meaningless single stdin line.
+6. **The change-passwd tool was renamed to
+   `parallels_vm_change_encryption_password`** (2026-10-10) — see the
+   "Tool rename" decision above. All identifiers followed
+   (`VMChangeEncryptionPassword*`, `descVMChangeEncryptionPassword`,
+   file `parallels_vm_change_encryption_password.go`); the `current_password`
+   / `new_password` argument names were kept.

@@ -10,8 +10,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
-	"github.com/cjlapao/pdfm-mcp/internal/tools"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/tools"
 )
 
 // jobProc is a controllable fake streaming process.

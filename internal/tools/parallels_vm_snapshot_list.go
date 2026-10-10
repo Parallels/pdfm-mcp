@@ -5,7 +5,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
 )
 
 // VMListSnapshotItem is one snapshot in a parallels_vm_snapshot_list
@@ -23,7 +23,7 @@ type VMListSnapshotItem struct {
 // VMListSnapshotsInput is the argument schema for the
 // parallels_vm_snapshot_list tool.
 type VMListSnapshotsInput struct {
-	VMID       string `json:"vm_id,omitempty" jsonschema:"VM id or name to target"`
+	VMID       string `json:"vm_id,omitempty" jsonschema:"VM id or name to target: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	SnapshotID string `json:"snapshot_id,omitempty" jsonschema:"list this single snapshot (braces optional) instead of the whole tree"`
 	Tree       bool   `json:"tree,omitempty" jsonschema:"return the ASCII snapshot tree (prlctl -t) as plain text"`
 	Password   string `json:"password,omitempty" jsonschema:"current encryption password — required only when the VM is encrypted, fed to prlctl over stdin and never logged"`

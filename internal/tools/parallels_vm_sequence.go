@@ -11,8 +11,8 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/orchestrator"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/orchestrator"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
 )
 
 // VMSequence returns the parallels_vm_sequence handler: it resolves the

@@ -6,8 +6,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
 )
 
 // VMEncryptInput is the argument schema for the parallels_vm_encrypt tool.
@@ -15,7 +15,7 @@ import (
 // a password is rejected by the handler (same convention as vm_id in VM
 // mode: the schema stays permissive, the handler enforces the contract).
 type VMEncryptInput struct {
-	VMID     string `json:"vm_id,omitempty" jsonschema:"VM id or name to target"`
+	VMID     string `json:"vm_id,omitempty" jsonschema:"VM id or name to target: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	Password string `json:"password,omitempty" jsonschema:"encryption password, 1-256 printable characters, fed to prlctl over stdin and never logged; required unless dry_run is true"`
 	DryRun   bool   `json:"dry_run,omitempty" jsonschema:"check the prerequisites without encrypting (no password needed)"`
 }

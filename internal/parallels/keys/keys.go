@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
 )
 
 // leftShiftCode is PRL_KEY_LEFT_SHIFT.

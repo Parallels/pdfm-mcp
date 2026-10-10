@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
 )
 
 // Bounds for snapshot identifiers and user-supplied labels.

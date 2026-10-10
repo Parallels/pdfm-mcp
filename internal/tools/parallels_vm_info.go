@@ -6,13 +6,13 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
 )
 
 // VMInfoInput is the argument schema for the parallels_vm_info tool.
 type VMInfoInput struct {
-	VMID    string `json:"vm_id,omitempty" jsonschema:"VM id or name to target (required in fleet mode)"`
+	VMID    string `json:"vm_id,omitempty" jsonschema:"VM id or name to target (required in fleet mode): the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	Refresh bool   `json:"refresh,omitempty" jsonschema:"force a fresh prlctl list instead of using the in-memory cache (VM mode only; fleet mode always fetches live)"`
 }
 

@@ -10,10 +10,10 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/config"
-	"github.com/cjlapao/pdfm-mcp/internal/policy"
-	"github.com/cjlapao/pdfm-mcp/internal/server"
-	"github.com/cjlapao/pdfm-mcp/internal/tools"
+	"github.com/Parallels/pdfm-mcp/internal/config"
+	"github.com/Parallels/pdfm-mcp/internal/policy"
+	"github.com/Parallels/pdfm-mcp/internal/server"
+	"github.com/Parallels/pdfm-mcp/internal/tools"
 )
 
 // policyServer brings up a server with the given config on a fake runner.

@@ -7,14 +7,14 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/config"
-	"github.com/cjlapao/pdfm-mcp/internal/ocr"
-	"github.com/cjlapao/pdfm-mcp/internal/orchestrator"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
-	"github.com/cjlapao/pdfm-mcp/internal/policy"
-	"github.com/cjlapao/pdfm-mcp/internal/telemetry"
-	"github.com/cjlapao/pdfm-mcp/internal/tools"
-	"github.com/cjlapao/pdfm-mcp/internal/version"
+	"github.com/Parallels/pdfm-mcp/internal/config"
+	"github.com/Parallels/pdfm-mcp/internal/ocr"
+	"github.com/Parallels/pdfm-mcp/internal/orchestrator"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/policy"
+	"github.com/Parallels/pdfm-mcp/internal/telemetry"
+	"github.com/Parallels/pdfm-mcp/internal/tools"
+	"github.com/Parallels/pdfm-mcp/internal/version"
 )
 
 // New builds the MCP server with all tools registered.
@@ -101,6 +101,10 @@ func toolTable(mode tools.PowerMode, observeRec ocr.Recognizer) []toolEntry {
 	table := []toolEntry{
 		// Fleet-scoped commands work in both modes.
 		{"parallels_list_vms", func(s *mcp.Server) { tools.RegisterParallelsListVms(s) }},
+		// Compact VM lookup (spec 026): substring search over the same
+		// cache, so a small model can find a VM without ingesting the
+		// full list.
+		{"parallels_search_vms", func(s *mcp.Server) { tools.RegisterParallelsSearchVms(s) }},
 		// Single-VM detail in both modes: the --vm-id target (cached) in
 		// VM mode, a specific VM by id or name (live fetch) in fleet mode.
 		{"parallels_vm_info", func(s *mcp.Server) { tools.RegisterParallelsVMInfo(s, mode) }},
@@ -130,7 +134,7 @@ func toolTable(mode tools.PowerMode, observeRec ocr.Recognizer) []toolEntry {
 		// VM encryption lifecycle (password via stdin, never logged).
 		{"parallels_vm_encrypt", func(s *mcp.Server) { tools.RegisterParallelsVMEncrypt(s, mode) }},
 		{"parallels_vm_decrypt", func(s *mcp.Server) { tools.RegisterParallelsVMDecrypt(s, mode) }},
-		{"parallels_vm_change_password", func(s *mcp.Server) { tools.RegisterParallelsVMChangePassword(s, mode) }},
+		{"parallels_vm_change_encryption_password", func(s *mcp.Server) { tools.RegisterParallelsVMChangeEncryptionPassword(s, mode) }},
 		// VM disk-space reclaim (estimate is read-only; real runs mutate
 		// the disk file).
 		{"parallels_vm_reclaim_disk", func(s *mcp.Server) { tools.RegisterParallelsVMReclaimDisk(s, mode) }},

@@ -1,7 +1,7 @@
 # Spec 001: Project Scaffold for `pdfm-mcp`
 
 | | |
-|---|---|
+| --- | --- |
 | Status | Implemented (2026-10-09; see Deviations) |
 | Audience | Implementing agents / engineers |
 | Scope | Repo layout, tooling, Makefile, VS Code debugging, CI, greeter reference tool |
@@ -24,12 +24,12 @@ Create the foundation of `pdfm-mcp`: a **Model Context Protocol server written i
 ## 2. Decisions
 
 | Topic | Decision | Rationale |
-|---|---|---|
+| --- | --- | --- |
 | Language | Go (latest stable; `go.mod` directive set by `go mod tidy`) | Single static binary, easy cross-compile |
 | MCP library | Official `github.com/modelcontextprotocol/go-sdk` (**v1.7.0** at time of writing; pin whatever `go get ...@latest` resolves to and commit `go.sum`) | Maintained with the MCP project; typed tool handlers with schema inference |
 | Transport | stdio only (`mcp.StdioTransport`) | Simplest for local clients; Streamable HTTP can be added later without restructuring |
 | Logging | `log/slog`, text handler, **stderr only** (optional file via env var) | stdout is reserved for the protocol |
-| Module path | `github.com/cjlapao/pdfm-mcp` | **Assumption**: the repo has no remote yet. Change in one place (`go mod init`) if wrong |
+| Module path | `github.com/Parallels/pdfm-mcp` | **Assumption**: the repo has no remote yet. Change in one place (`go mod init`) if wrong |
 | Lint | `golangci-lint` v2 | Standard |
 | Dependencies | Standard library plus the SDK only, until a spec requires more | Small attack surface |
 
@@ -106,7 +106,7 @@ stdout carries the protocol. Any stray byte breaks the client with confusing par
 Environment variables, all optional:
 
 | Variable | Default | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `PDFM_MCP_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `PDFM_MCP_LOG_FILE` | empty | If set, logs are also appended to this file (useful because MCP clients often hide stderr) |
 
@@ -119,8 +119,8 @@ Create each file exactly as below, then adapt to compile if the SDK differs.
 ### 5.1 Initialise the module
 
 ```sh
-cd /Users/cjlapao/code/GitHub/pdfm-mcp
-go mod init github.com/cjlapao/pdfm-mcp
+cd /path/to/pdfm-mcp
+go mod init github.com/Parallels/pdfm-mcp
 go get github.com/modelcontextprotocol/go-sdk@latest
 go mod tidy   # after the source files exist
 ```
@@ -135,14 +135,14 @@ import "fmt"
 
 // These are overwritten at build time by the Makefile.
 var (
-	Version = "dev"
-	Commit  = "none"
-	Date    = "unknown"
+ Version = "dev"
+ Commit  = "none"
+ Date    = "unknown"
 )
 
 // String returns a human readable version line.
 func String() string {
-	return fmt.Sprintf("pdfm-mcp %s (commit %s, built %s)", Version, Commit, Date)
+ return fmt.Sprintf("pdfm-mcp %s (commit %s, built %s)", Version, Commit, Date)
 }
 ```
 
@@ -153,47 +153,47 @@ func String() string {
 package config
 
 import (
-	"flag"
-	"io"
-	"log/slog"
-	"os"
-	"strings"
+ "flag"
+ "io"
+ "log/slog"
+ "os"
+ "strings"
 )
 
 // Config holds runtime settings.
 type Config struct {
-	LogLevel    slog.Level
-	LogFile     string
-	ShowVersion bool
+ LogLevel    slog.Level
+ LogFile     string
+ ShowVersion bool
 }
 
 // Load parses args (without the program name) and the environment.
 func Load(args []string, stderr io.Writer) (Config, error) {
-	var (
-		cfg      Config
-		levelStr = envOr("PDFM_MCP_LOG_LEVEL", "info")
-	)
+ var (
+  cfg      Config
+  levelStr = envOr("PDFM_MCP_LOG_LEVEL", "info")
+ )
 
-	fs := flag.NewFlagSet("pdfm-mcp", flag.ContinueOnError)
-	fs.SetOutput(stderr)
-	fs.BoolVar(&cfg.ShowVersion, "version", false, "print version and exit")
-	fs.StringVar(&levelStr, "log-level", levelStr, "log level: debug|info|warn|error")
-	if err := fs.Parse(args); err != nil {
-		return cfg, err
-	}
+ fs := flag.NewFlagSet("pdfm-mcp", flag.ContinueOnError)
+ fs.SetOutput(stderr)
+ fs.BoolVar(&cfg.ShowVersion, "version", false, "print version and exit")
+ fs.StringVar(&levelStr, "log-level", levelStr, "log level: debug|info|warn|error")
+ if err := fs.Parse(args); err != nil {
+  return cfg, err
+ }
 
-	cfg.LogFile = os.Getenv("PDFM_MCP_LOG_FILE")
-	if err := cfg.LogLevel.UnmarshalText([]byte(strings.ToLower(levelStr))); err != nil {
-		return cfg, err
-	}
-	return cfg, nil
+ cfg.LogFile = os.Getenv("PDFM_MCP_LOG_FILE")
+ if err := cfg.LogLevel.UnmarshalText([]byte(strings.ToLower(levelStr))); err != nil {
+  return cfg, err
+ }
+ return cfg, nil
 }
 
 func envOr(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return def
+ if v := os.Getenv(key); v != "" {
+  return v
+ }
+ return def
 }
 ```
 
@@ -204,48 +204,48 @@ func envOr(key, def string) string {
 package tools
 
 import (
-	"context"
-	"strings"
+ "context"
+ "strings"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
+ "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // GreetInput is the argument schema for the greet tool.
 // The jsonschema tag becomes the argument description shown to the model.
 type GreetInput struct {
-	Name  string `json:"name" jsonschema:"the name of the person to greet"`
-	Shout bool   `json:"shout,omitempty" jsonschema:"return the greeting in upper case"`
+ Name  string `json:"name" jsonschema:"the name of the person to greet"`
+ Shout bool   `json:"shout,omitempty" jsonschema:"return the greeting in upper case"`
 }
 
 // GreetOutput is the structured result of the greet tool.
 type GreetOutput struct {
-	Greeting string `json:"greeting" jsonschema:"the greeting message"`
+ Greeting string `json:"greeting" jsonschema:"the greeting message"`
 }
 
 // Greet is the handler. Keep handlers thin: validate, call domain code, map result.
 func Greet(ctx context.Context, req *mcp.CallToolRequest, in GreetInput) (*mcp.CallToolResult, GreetOutput, error) {
-	name := strings.TrimSpace(in.Name)
-	if name == "" {
-		// Returning an error yields a tool result with isError=true.
-		return nil, GreetOutput{}, errEmptyName
-	}
+ name := strings.TrimSpace(in.Name)
+ if name == "" {
+  // Returning an error yields a tool result with isError=true.
+  return nil, GreetOutput{}, errEmptyName
+ }
 
-	msg := "Hello, " + name + "!"
-	if in.Shout {
-		msg = strings.ToUpper(msg)
-	}
-	// Returning a nil result lets the SDK populate both structured content
-	// and a text content block from the output value.
-	return nil, GreetOutput{Greeting: msg}, nil
+ msg := "Hello, " + name + "!"
+ if in.Shout {
+  msg = strings.ToUpper(msg)
+ }
+ // Returning a nil result lets the SDK populate both structured content
+ // and a text content block from the output value.
+ return nil, GreetOutput{Greeting: msg}, nil
 }
 
 // RegisterGreet adds the greet tool to the server.
 func RegisterGreet(s *mcp.Server) {
-	mcp.AddTool(s, &mcp.Tool{
-		Name:        "greet",
-		Description: "Greets a person by name. Reference tool used to verify the MCP plumbing.",
-		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
-	}, Greet)
+ mcp.AddTool(s, &mcp.Tool{
+  Name:        "greet",
+  Description: "Greets a person by name. Reference tool used to verify the MCP plumbing.",
+  Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
+ }, Greet)
 }
 ```
 
@@ -266,28 +266,28 @@ var errEmptyName = errors.New("name must not be empty")
 package server
 
 import (
-	"log/slog"
+ "log/slog"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
+ "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/tools"
-	"github.com/cjlapao/pdfm-mcp/internal/version"
+ "github.com/Parallels/pdfm-mcp/internal/tools"
+ "github.com/Parallels/pdfm-mcp/internal/version"
 )
 
 // New builds the MCP server with all tools registered.
 func New(logger *slog.Logger) *mcp.Server {
-	s := mcp.NewServer(
-		&mcp.Implementation{Name: "pdfm-mcp", Version: version.Version},
-		&mcp.ServerOptions{
-			Logger:       logger,
-			Instructions: "pdfm-mcp server. Use the available tools to interact with pdfm.",
-		},
-	)
+ s := mcp.NewServer(
+  &mcp.Implementation{Name: "pdfm-mcp", Version: version.Version},
+  &mcp.ServerOptions{
+   Logger:       logger,
+   Instructions: "pdfm-mcp server. Use the available tools to interact with pdfm.",
+  },
+ )
 
-	tools.RegisterGreet(s)
-	// Register new tools here.
+ tools.RegisterGreet(s)
+ // Register new tools here.
 
-	return s
+ return s
 }
 ```
 
@@ -297,66 +297,66 @@ func New(logger *slog.Logger) *mcp.Server {
 package main
 
 import (
-	"context"
-	"fmt"
-	"io"
-	"log/slog"
-	"os"
-	"os/signal"
-	"syscall"
+ "context"
+ "fmt"
+ "io"
+ "log/slog"
+ "os"
+ "os/signal"
+ "syscall"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
+ "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/config"
-	"github.com/cjlapao/pdfm-mcp/internal/server"
-	"github.com/cjlapao/pdfm-mcp/internal/version"
+ "github.com/Parallels/pdfm-mcp/internal/config"
+ "github.com/Parallels/pdfm-mcp/internal/server"
+ "github.com/Parallels/pdfm-mcp/internal/version"
 )
 
 func main() {
-	os.Exit(run())
+ os.Exit(run())
 }
 
 func run() int {
-	cfg, err := config.Load(os.Args[1:], os.Stderr)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "config error:", err)
-		return 2
-	}
-	if cfg.ShowVersion {
-		// --version is the one allowed stdout write: it never runs in server mode.
-		fmt.Fprintln(os.Stdout, version.String()) //nolint:forbidigo
-		return 0
-	}
+ cfg, err := config.Load(os.Args[1:], os.Stderr)
+ if err != nil {
+  fmt.Fprintln(os.Stderr, "config error:", err)
+  return 2
+ }
+ if cfg.ShowVersion {
+  // --version is the one allowed stdout write: it never runs in server mode.
+  fmt.Fprintln(os.Stdout, version.String()) //nolint:forbidigo
+  return 0
+ }
 
-	logger, closeLog := newLogger(cfg)
-	defer closeLog()
-	slog.SetDefault(logger)
-	logger.Info("starting", "version", version.Version, "commit", version.Commit)
+ logger, closeLog := newLogger(cfg)
+ defer closeLog()
+ slog.SetDefault(logger)
+ logger.Info("starting", "version", version.Version, "commit", version.Commit)
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+ ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+ defer stop()
 
-	if err := server.New(logger).Run(ctx, &mcp.StdioTransport{}); err != nil {
-		logger.Error("server exited with error", "err", err)
-		return 1
-	}
-	logger.Info("server stopped")
-	return 0
+ if err := server.New(logger).Run(ctx, &mcp.StdioTransport{}); err != nil {
+  logger.Error("server exited with error", "err", err)
+  return 1
+ }
+ logger.Info("server stopped")
+ return 0
 }
 
 func newLogger(cfg config.Config) (*slog.Logger, func()) {
-	var w io.Writer = os.Stderr
-	closer := func() {}
-	if cfg.LogFile != "" {
-		f, err := os.OpenFile(cfg.LogFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "cannot open log file:", err)
-		} else {
-			w = io.MultiWriter(os.Stderr, f)
-			closer = func() { _ = f.Close() }
-		}
-	}
-	return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{Level: cfg.LogLevel})), closer
+ var w io.Writer = os.Stderr
+ closer := func() {}
+ if cfg.LogFile != "" {
+  f, err := os.OpenFile(cfg.LogFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+  if err != nil {
+   fmt.Fprintln(os.Stderr, "cannot open log file:", err)
+  } else {
+   w = io.MultiWriter(os.Stderr, f)
+   closer = func() { _ = f.Close() }
+  }
+ }
+ return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{Level: cfg.LogLevel})), closer
 }
 ```
 
@@ -373,74 +373,74 @@ Two layers in one file:
 package tools_test
 
 import (
-	"context"
-	"io"
-	"log/slog"
-	"testing"
+ "context"
+ "io"
+ "log/slog"
+ "testing"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
+ "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/server"
-	"github.com/cjlapao/pdfm-mcp/internal/tools"
+ "github.com/Parallels/pdfm-mcp/internal/server"
+ "github.com/Parallels/pdfm-mcp/internal/tools"
 )
 
 func TestGreetHandler(t *testing.T) {
-	cases := []struct {
-		name    string
-		in      tools.GreetInput
-		want    string
-		wantErr bool
-	}{
-		{"normal", tools.GreetInput{Name: "Carlos"}, "Hello, Carlos!", false},
-		{"shout", tools.GreetInput{Name: "Carlos", Shout: true}, "HELLO, CARLOS!", false},
-		{"trims", tools.GreetInput{Name: "  Carlos "}, "Hello, Carlos!", false},
-		{"empty", tools.GreetInput{Name: "   "}, "", true},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			_, out, err := tools.Greet(context.Background(), nil, tc.in)
-			if (err != nil) != tc.wantErr {
-				t.Fatalf("err = %v, wantErr %v", err, tc.wantErr)
-			}
-			if out.Greeting != tc.want {
-				t.Fatalf("greeting = %q, want %q", out.Greeting, tc.want)
-			}
-		})
-	}
+ cases := []struct {
+  name    string
+  in      tools.GreetInput
+  want    string
+  wantErr bool
+ }{
+  {"normal", tools.GreetInput{Name: "Carlos"}, "Hello, Carlos!", false},
+  {"shout", tools.GreetInput{Name: "Carlos", Shout: true}, "HELLO, CARLOS!", false},
+  {"trims", tools.GreetInput{Name: "  Carlos "}, "Hello, Carlos!", false},
+  {"empty", tools.GreetInput{Name: "   "}, "", true},
+ }
+ for _, tc := range cases {
+  t.Run(tc.name, func(t *testing.T) {
+   _, out, err := tools.Greet(context.Background(), nil, tc.in)
+   if (err != nil) != tc.wantErr {
+    t.Fatalf("err = %v, wantErr %v", err, tc.wantErr)
+   }
+   if out.Greeting != tc.want {
+    t.Fatalf("greeting = %q, want %q", out.Greeting, tc.want)
+   }
+  })
+ }
 }
 
 func TestGreetOverInMemoryTransport(t *testing.T) {
-	ctx := context.Background()
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+ ctx := context.Background()
+ logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
-	clientT, serverT := mcp.NewInMemoryTransports()
-	srvSession, err := server.New(logger).Connect(ctx, serverT, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer srvSession.Close()
+ clientT, serverT := mcp.NewInMemoryTransports()
+ srvSession, err := server.New(logger).Connect(ctx, serverT, nil)
+ if err != nil {
+  t.Fatal(err)
+ }
+ defer srvSession.Close()
 
-	client := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "v0"}, nil)
-	cs, err := client.Connect(ctx, clientT, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cs.Close()
+ client := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "v0"}, nil)
+ cs, err := client.Connect(ctx, clientT, nil)
+ if err != nil {
+  t.Fatal(err)
+ }
+ defer cs.Close()
 
-	res, err := cs.CallTool(ctx, &mcp.CallToolParams{
-		Name:      "greet",
-		Arguments: map[string]any{"name": "Carlos"},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.IsError {
-		t.Fatalf("unexpected tool error: %+v", res.Content)
-	}
-	got, _ := res.StructuredContent.(map[string]any)
-	if got["greeting"] != "Hello, Carlos!" {
-		t.Fatalf("structured content = %v", res.StructuredContent)
-	}
+ res, err := cs.CallTool(ctx, &mcp.CallToolParams{
+  Name:      "greet",
+  Arguments: map[string]any{"name": "Carlos"},
+ })
+ if err != nil {
+  t.Fatal(err)
+ }
+ if res.IsError {
+  t.Fatalf("unexpected tool error: %+v", res.Content)
+ }
+ got, _ := res.StructuredContent.(map[string]any)
+ if got["greeting"] != "Hello, Carlos!" {
+  t.Fatalf("structured content = %v", res.StructuredContent)
+ }
 }
 ```
 
@@ -454,56 +454,56 @@ Build tag `e2e` keeps it out of `make test`. It builds the binary into a temp di
 package e2e
 
 import (
-	"context"
-	"os/exec"
-	"path/filepath"
-	"testing"
-	"time"
+ "context"
+ "os/exec"
+ "path/filepath"
+ "testing"
+ "time"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
+ "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func TestStdioEndToEnd(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+ ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+ defer cancel()
 
-	bin := filepath.Join(t.TempDir(), "pdfm-mcp")
-	if out, err := exec.Command("go", "build", "-o", bin, "../../cmd/pdfm-mcp").CombinedOutput(); err != nil {
-		t.Fatalf("build failed: %v\n%s", err, out)
-	}
+ bin := filepath.Join(t.TempDir(), "pdfm-mcp")
+ if out, err := exec.Command("go", "build", "-o", bin, "../../cmd/pdfm-mcp").CombinedOutput(); err != nil {
+  t.Fatalf("build failed: %v\n%s", err, out)
+ }
 
-	client := mcp.NewClient(&mcp.Implementation{Name: "e2e", Version: "v0"}, nil)
-	session, err := client.Connect(ctx, &mcp.CommandTransport{Command: exec.Command(bin)}, nil)
-	if err != nil {
-		t.Fatalf("connect: %v", err)
-	}
-	defer session.Close()
+ client := mcp.NewClient(&mcp.Implementation{Name: "e2e", Version: "v0"}, nil)
+ session, err := client.Connect(ctx, &mcp.CommandTransport{Command: exec.Command(bin)}, nil)
+ if err != nil {
+  t.Fatalf("connect: %v", err)
+ }
+ defer session.Close()
 
-	tools, err := session.ListTools(ctx, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	found := false
-	for _, tl := range tools.Tools {
-		if tl.Name == "greet" {
-			found = true
-		}
-	}
-	if !found {
-		t.Fatalf("greet not listed: %+v", tools.Tools)
-	}
+ tools, err := session.ListTools(ctx, nil)
+ if err != nil {
+  t.Fatal(err)
+ }
+ found := false
+ for _, tl := range tools.Tools {
+  if tl.Name == "greet" {
+   found = true
+  }
+ }
+ if !found {
+  t.Fatalf("greet not listed: %+v", tools.Tools)
+ }
 
-	res, err := session.CallTool(ctx, &mcp.CallToolParams{
-		Name:      "greet",
-		Arguments: map[string]any{"name": "e2e", "shout": true},
-	})
-	if err != nil || res.IsError {
-		t.Fatalf("call failed: err=%v res=%+v", err, res)
-	}
-	got, _ := res.StructuredContent.(map[string]any)
-	if got["greeting"] != "HELLO, E2E!" {
-		t.Fatalf("unexpected result: %v", res.StructuredContent)
-	}
+ res, err := session.CallTool(ctx, &mcp.CallToolParams{
+  Name:      "greet",
+  Arguments: map[string]any{"name": "e2e", "shout": true},
+ })
+ if err != nil || res.IsError {
+  t.Fatalf("call failed: err=%v res=%+v", err, res)
+ }
+ got, _ := res.StructuredContent.(map[string]any)
+ if got["greeting"] != "HELLO, E2E!" {
+  t.Fatalf("unexpected result: %v", res.StructuredContent)
+ }
 }
 ```
 
@@ -519,7 +519,7 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 BINARY      := pdfm-mcp
-MODULE      := github.com/cjlapao/pdfm-mcp
+MODULE      := github.com/Parallels/pdfm-mcp
 CMD         := ./cmd/pdfm-mcp
 BIN_DIR     := bin
 DIST_DIR    := dist
@@ -529,9 +529,9 @@ COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
 DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
 LDFLAGS := -s -w \
-	-X $(MODULE)/internal/version.Version=$(VERSION) \
-	-X $(MODULE)/internal/version.Commit=$(COMMIT) \
-	-X $(MODULE)/internal/version.Date=$(DATE)
+ -X $(MODULE)/internal/version.Version=$(VERSION) \
+ -X $(MODULE)/internal/version.Commit=$(COMMIT) \
+ -X $(MODULE)/internal/version.Date=$(DATE)
 
 # Debug builds keep symbols and disable optimisation/inlining so Delve works well.
 DEBUG_GCFLAGS := all=-N -l
@@ -543,42 +543,42 @@ export CGO_ENABLED ?= 0
 
 .PHONY: help
 help: ## Show this help
-	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[36m<target>\033[0m\n\n"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+ @awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[36m<target>\033[0m\n\n"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 ##@ Development
 
 .PHONY: tidy
 tidy: ## Sync go.mod/go.sum
-	go mod tidy
+ go mod tidy
 
 .PHONY: fmt
 fmt: ## Format code
-	gofmt -s -w .
+ gofmt -s -w .
 
 .PHONY: fmt-check
 fmt-check: ## Fail if code is not formatted
-	@test -z "$$(gofmt -s -l .)" || (echo "unformatted files:"; gofmt -s -l .; exit 1)
+ @test -z "$$(gofmt -s -l .)" || (echo "unformatted files:"; gofmt -s -l .; exit 1)
 
 .PHONY: vet
 vet: ## Run go vet
-	go vet ./...
+ go vet ./...
 
 .PHONY: lint
 lint: ## Run golangci-lint (must be installed)
-	golangci-lint run ./...
+ golangci-lint run ./...
 
 .PHONY: test
 test: ## Run unit tests with race detector
-	CGO_ENABLED=1 go test -race -count=1 ./...
+ CGO_ENABLED=1 go test -race -count=1 ./...
 
 .PHONY: test-e2e
 test-e2e: ## Run end-to-end tests (spawns the binary over stdio)
-	go test -tags e2e -count=1 ./test/e2e/...
+ go test -tags e2e -count=1 ./test/e2e/...
 
 .PHONY: cover
 cover: ## Coverage report (coverage.out + summary)
-	go test -coverprofile=coverage.out ./...
-	go tool cover -func=coverage.out | tail -n 1
+ go test -coverprofile=coverage.out ./...
+ go tool cover -func=coverage.out | tail -n 1
 
 .PHONY: check
 check: fmt-check vet lint test ## Everything CI runs (minus e2e)
@@ -587,59 +587,59 @@ check: fmt-check vet lint test ## Everything CI runs (minus e2e)
 
 .PHONY: build
 build: ## Build optimised binary into bin/
-	@mkdir -p $(BIN_DIR)
-	go build -trimpath -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/$(BINARY) $(CMD)
+ @mkdir -p $(BIN_DIR)
+ go build -trimpath -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/$(BINARY) $(CMD)
 
 .PHONY: build-debug
 build-debug: ## Build with debug symbols (no optimisation) for Delve
-	@mkdir -p $(BIN_DIR)
-	go build -gcflags "$(DEBUG_GCFLAGS)" -ldflags "$(DEBUG_LDFLAGS)" -o $(BIN_DIR)/$(BINARY)-debug $(CMD)
+ @mkdir -p $(BIN_DIR)
+ go build -gcflags "$(DEBUG_GCFLAGS)" -ldflags "$(DEBUG_LDFLAGS)" -o $(BIN_DIR)/$(BINARY)-debug $(CMD)
 
 .PHONY: run
 run: build ## Run the server on the terminal (type JSON-RPC lines manually)
-	./$(BIN_DIR)/$(BINARY)
+ ./$(BIN_DIR)/$(BINARY)
 
 .PHONY: inspect
 inspect: build ## Open MCP Inspector against the binary (needs npx)
-	./scripts/inspect.sh ./$(BIN_DIR)/$(BINARY)
+ ./scripts/inspect.sh ./$(BIN_DIR)/$(BINARY)
 
 .PHONY: smoke
 smoke: build ## Raw stdio handshake + tools/list, prints server responses
-	@printf '%s\n%s\n%s\n' \
-	 '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"smoke","version":"0"}}}' \
-	 '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
-	 '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
-	 | ./$(BIN_DIR)/$(BINARY)
+ @printf '%s\n%s\n%s\n' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"smoke","version":"0"}}}' \
+  '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+  | ./$(BIN_DIR)/$(BINARY)
 
 .PHONY: install
 install: ## Install into $GOBIN / $GOPATH/bin
-	go install -trimpath -ldflags "$(LDFLAGS)" $(CMD)
+ go install -trimpath -ldflags "$(LDFLAGS)" $(CMD)
 
 .PHONY: build-all
 build-all: ## Cross-compile for all PLATFORMS into dist/
-	@mkdir -p $(DIST_DIR)
-	@for p in $(PLATFORMS); do \
-		os=$${p%/*}; arch=$${p#*/}; ext=""; [ $$os = windows ] && ext=".exe"; \
-		echo "building $$os/$$arch"; \
-		GOOS=$$os GOARCH=$$arch go build -trimpath -ldflags "$(LDFLAGS)" \
-			-o $(DIST_DIR)/$(BINARY)-$$os-$$arch$$ext $(CMD) || exit 1; \
-	done
+ @mkdir -p $(DIST_DIR)
+ @for p in $(PLATFORMS); do \
+  os=$${p%/*}; arch=$${p#*/}; ext=""; [ $$os = windows ] && ext=".exe"; \
+  echo "building $$os/$$arch"; \
+  GOOS=$$os GOARCH=$$arch go build -trimpath -ldflags "$(LDFLAGS)" \
+   -o $(DIST_DIR)/$(BINARY)-$$os-$$arch$$ext $(CMD) || exit 1; \
+ done
 
 ##@ Integration
 
 .PHONY: claude-add
 claude-add: build ## Register the local binary with Claude Code
-	claude mcp add pdfm-mcp -- $(abspath $(BIN_DIR)/$(BINARY))
+ claude mcp add pdfm-mcp -- $(abspath $(BIN_DIR)/$(BINARY))
 
 .PHONY: claude-remove
 claude-remove: ## Unregister from Claude Code
-	claude mcp remove pdfm-mcp
+ claude mcp remove pdfm-mcp
 
 ##@ Housekeeping
 
 .PHONY: clean
 clean: ## Remove build outputs
-	rm -rf $(BIN_DIR) $(DIST_DIR) coverage.out
+ rm -rf $(BIN_DIR) $(DIST_DIR) coverage.out
 ```
 
 Note: the `smoke` protocol version string should match one the SDK supports. If the server rejects it, replace with the version the SDK's `initialize` response reports (check `go doc` or the SDK release notes).
@@ -790,7 +790,7 @@ Pin action versions to the latest available majors at implementation time.
 stdin/stdout are the protocol channel, so a normal "press F5" session has no way to feed JSON-RPC to the process. There are three practical patterns; this scaffold supports all of them:
 
 | Pattern | When to use | How |
-|---|---|---|
+| --- | --- | --- |
 | **A. Debug tests** | Day-to-day development. Fastest loop. | The in-memory and e2e tests run the real server logic; set breakpoints in handlers and use "Debug Test". |
 | **B. Launch in integrated terminal** | Poking the server by hand. | Delve launches the server with `console: integratedTerminal`, so you can paste JSON-RPC lines into the terminal's stdin. |
 | **C. Attach to a client-spawned process** | Debugging exactly what Claude / Inspector does. | The client spawns the binary; VS Code attaches to its PID. Use `build-debug` binary so breakpoints bind correctly. |
@@ -970,7 +970,7 @@ Use an absolute path to the binary.
 **Claude Code**
 
 ```sh
-claude mcp add pdfm-mcp -- /Users/cjlapao/code/GitHub/pdfm-mcp/bin/pdfm-mcp
+claude mcp add pdfm-mcp -- /path/to/pdfm-mcp/bin/pdfm-mcp
 claude mcp list
 ```
 
@@ -980,7 +980,7 @@ claude mcp list
 {
   "mcpServers": {
     "pdfm-mcp": {
-      "command": "/Users/cjlapao/code/GitHub/pdfm-mcp/bin/pdfm-mcp",
+      "command": "/path/to/pdfm-mcp/bin/pdfm-mcp",
       "args": ["--log-level", "debug"],
       "env": { "PDFM_MCP_LOG_FILE": "/tmp/pdfm-mcp.log" }
     }
@@ -1027,5 +1027,5 @@ Implemented 2026-10-09 with Go 1.27.1 (darwin/arm64), golangci-lint v2, Make, No
    - `cmd/pdfm-mcp/main.go`: added a package doc comment (`// Command pdfm-mcp …`); `--version` write is now `_, _ = fmt.Fprintln(…)` (errcheck), keeping the `//nolint:forbidigo`.
    - `internal/tools/greet.go`: unused handler parameters renamed to `_` (revive unused-parameter); signature still matches `ToolHandlerFor`.
    - `internal/tools/greet_test.go` and `test/e2e/stdio_test.go`: `Close()` calls wrapped in defers that log the error instead of `defer x.Close()` (errcheck).
-6. **`greet` reference tool removed (2026-10-09, post-implementation).** It was scaffolding for testing the MCP plumbing only. With it gone the server exposes no tools when the Parallels module is disabled, `TestStdioEndToEnd` now asserts connect + tools/list + module gating instead of calling `greet`, and the disabled-mode protocol test asserts zero tools. The VS Code breakpoint walkthrough in the README now points at `ListVms`.
-5. **`make smoke` keeps stdin open for 1 s after printing the requests** (`{ printf …; sleep 1; } | ./bin/pdfm-mcp`). As written in §7.1, the pipe closes immediately after the third line; SDK v1.8.0 tears the session down on stdin EOF, which in a tight race tears it down before the `initialize`/`tools/list` responses are flushed, so stdout comes back empty. With the 1 s hold, `make smoke` reliably prints both responses (verified). Real clients keep stdin open, so this only affects the smoke target.
+5. **`greet` reference tool removed (2026-10-09, post-implementation).** It was scaffolding for testing the MCP plumbing only. With it gone the server exposes no tools when the Parallels module is disabled, `TestStdioEndToEnd` now asserts connect + tools/list + module gating instead of calling `greet`, and the disabled-mode protocol test asserts zero tools. The VS Code breakpoint walkthrough in the README now points at `ListVms`.
+6. **`make smoke` keeps stdin open for 1 s after printing the requests** (`{ printf …; sleep 1; } | ./bin/pdfm-mcp`). As written in §7.1, the pipe closes immediately after the third line; SDK v1.8.0 tears the session down on stdin EOF, which in a tight race tears it down before the `initialize`/`tools/list` responses are flushed, so stdout comes back empty. With the 1 s hold, `make smoke` reliably prints both responses (verified). Real clients keep stdin open, so this only affects the smoke target.

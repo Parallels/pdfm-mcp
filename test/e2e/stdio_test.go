@@ -162,7 +162,7 @@ func TestParallelsGating(t *testing.T) {
 	// dry-run precondition checks execute below (default-on); real
 	// encrypt/decrypt/change-password never run here — they are
 	// secret-bearing state mutations (manual QA only).
-	for _, p := range []string{"parallels_vm_encrypt", "parallels_vm_decrypt", "parallels_vm_change_password"} {
+	for _, p := range []string{"parallels_vm_encrypt", "parallels_vm_decrypt", "parallels_vm_change_encryption_password"} {
 		if !names[p] {
 			t.Fatalf("fleet mode: %s not listed: %v", p, names)
 		}
@@ -414,7 +414,7 @@ func TestParallelsGating(t *testing.T) {
 	if !vmNames["parallels_vm_sequence"] {
 		t.Fatalf("vm mode: parallels_vm_sequence not listed: %v", vmNames)
 	}
-	for _, p := range []string{"parallels_vm_encrypt", "parallels_vm_decrypt", "parallels_vm_change_password"} {
+	for _, p := range []string{"parallels_vm_encrypt", "parallels_vm_decrypt", "parallels_vm_change_encryption_password"} {
 		if !vmNames[p] {
 			t.Fatalf("vm mode: %s not listed: %v", p, vmNames)
 		}

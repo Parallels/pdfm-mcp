@@ -38,8 +38,13 @@ for v in v1.2.3 1.2 '1.2.3;id' '$(id)' '1.2.3 x' ''; do expect_fail "bad version
 expect_fail "missing binary" "$S" 1.2.3 "$T/nope" "$OUT"
 expect_fail "missing icon" env MCPB_ICON="$T/none.png" "$S" 1.2.3 "$T/pdfm-mcp" "$OUT"
 expect_fail "wrong arg count" "$S" 1.2.3 "$T/pdfm-mcp"
-# Placeholders remain in the template: strict mode must refuse, default must warn only.
-expect_fail "MCPB_STRICT fails on <placeholders>" env MCPB_STRICT=1 "$S" 1.2.3 "$T/pdfm-mcp" "$OUT"
+# Placeholder guard (self-contained): the shipped template is already
+# clean, so the guard is exercised against a template that still carries
+# a <placeholder>. Strict mode must refuse; default must warn but build.
+sed 's|"name": "Parallels"|"name": "<PUBLISHER>"|' "$REPO_ROOT/packaging/mcpb/manifest.json.tmpl" > "$T/tmpl-placeholder.json"
+expect_fail "MCPB_STRICT fails on <placeholders>" env MCPB_STRICT=1 MCPB_TEMPLATE="$T/tmpl-placeholder.json" "$S" 1.2.3 "$T/pdfm-mcp" "$OUT"
+warn_err=$(env MCPB_TEMPLATE="$T/tmpl-placeholder.json" "$S" 1.2.3 "$T/pdfm-mcp" "$OUT" 2>&1 >/dev/null); warn_rc=$?
+if [[ $warn_rc -eq 0 && $warn_err == *"<placeholder>"* && -f $B ]]; then ok "default warns on <placeholders> but still builds"; else bad "default warns on <placeholders> but still builds"; fi
 # Real pack with the unresolved pin must fail loudly (no network attempted).
 expect_fail "unresolved MCPB_PIN rejected" env -u MCPB_SKIP_PACK MCPB_PIN='<pinned>' "$S" 1.2.3 "$T/pdfm-mcp" "$OUT"
 # No env dump / secrets in output.

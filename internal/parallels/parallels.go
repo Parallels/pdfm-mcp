@@ -9,8 +9,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/service"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/service"
 )
 
 // Option configures the service during initialization.
@@ -72,6 +72,10 @@ const (
 
 // MaxVMRefLength bounds a VM id/name reference.
 const MaxVMRefLength = service.MaxVMRefLength
+
+// UnquoteVMRef trims and strips one pair of surrounding double quotes from
+// a VM id/name reference (LLM shell-quoting tolerance; spec 025).
+func UnquoteVMRef(ref string) string { return service.UnquoteVMRef(ref) }
 
 // ValidateVMRef trims and validates a VM id/name reference before it is
 // passed to prlctl. The single source of truth for the --vm-id and tool

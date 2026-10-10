@@ -12,7 +12,7 @@
 
 Make `pdfm-mcp` **discoverable** in the official MCP Registry so MCP clients and aggregators can find it and install it from its `.mcpb` bundle. The registry is a **metadata catalog only**: it points at the artifact on GitHub Releases and does not host it.
 
-> **This is a public listing.** The registry is public, and the `.mcpb` URL it advertises must be downloadable by anyone. For a confidential corporate repo this only happens after Parallels explicitly approves publishing the product (and Legal has decided the license). Until then this spec stays unimplemented, and the job below must not run (`vars.PUBLISH_PUBLIC != 'true'`).
+> **This is a public listing.** The registry is public, and the `.mcpb` URL it advertises must be downloadable by anyone. This only happens after Parallels explicitly approves the listing (and Legal has decided the license). Until then this spec stays unimplemented, and the job below must not run (`vars.PUBLISH_PUBLIC != 'true'`).
 
 ### Acceptance criteria
 
@@ -40,7 +40,7 @@ Make `pdfm-mcp` **discoverable** in the official MCP Registry so MCP clients and
 
 | Option | Name | Auth | Notes |
 |---|---|---|---|
-| A | `io.github.parallels-corp/pdfm-mcp` | GitHub OIDC | Simplest; the owner segment must match the org that owns the repo (case and org-vs-user rules to verify) |
+| A | `io.github.Parallels/pdfm-mcp` | GitHub OIDC | Simplest; the owner segment must match the org that owns the repo (case and org-vs-user rules to verify) |
 | B | `com.parallels/pdfm-mcp` | DNS | Best brand fit; needs Parallels IT to control the DNS record and the signing key |
 
 Record the decision under Deviations.

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cjlapao/pdfm-mcp/internal/imaging"
+	"github.com/Parallels/pdfm-mcp/internal/imaging"
 )
 
 // The five check kinds.

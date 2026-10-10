@@ -13,10 +13,10 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/imaging"
-	"github.com/cjlapao/pdfm-mcp/internal/ocr"
-	"github.com/cjlapao/pdfm-mcp/internal/orchestrator"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/imaging"
+	"github.com/Parallels/pdfm-mcp/internal/ocr"
+	"github.com/Parallels/pdfm-mcp/internal/orchestrator"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
 )
 
 const descVMObserve = "Reads the text on the VM's screen: the screen's text (the default), what changed since the previous observation, or where a piece of text is. It takes a screenshot, downscales it exactly like parallels_vm_capture (default 1568 px long edge) and runs OCR locally with Apple Vision built into this binary (nothing leaves this machine from this tool). mode text returns the recognized lines plus the joined text; mode changes returns the lines added and removed since the previous observation of this VM (the first call reports every line as added with previous_observed false; every observe call, in any mode, refreshes the baseline); mode find returns the lines matching query (case-insensitive substring, or an RE2 regex) with a center point to aim at. Optional region [x0,y0,x1,y1] (screenshot pixels), limit (default 50, max 500), min_confidence (0-1, default 0.3). All coordinates are [x0,y0,x1,y1] / [x,y] in screenshot pixels, origin top-left; multiply by original_width/width to get native pixels. No image is returned. The OUTPUT text still reaches the model provider: screens can contain secrets, so do not observe a VM showing credentials or confidential data while connected to an external AI service. The VM must be running."
@@ -38,7 +38,7 @@ const (
 
 // ObserveInput is the argument schema of parallels_vm_observe.
 type ObserveInput struct {
-	VMID          string  `json:"vm_id,omitempty" jsonschema:"VM id or name to observe"`
+	VMID          string  `json:"vm_id,omitempty" jsonschema:"VM id or name to observe: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	Mode          string  `json:"mode,omitempty" jsonschema:"text (default): all recognized lines; changes: lines added/removed since the previous observation; find: lines matching query"`
 	Query         string  `json:"query,omitempty" jsonschema:"find mode only (required): text to look for, case-insensitive substring (max 1024 bytes)"`
 	Regex         bool    `json:"regex,omitempty" jsonschema:"find mode only: treat query as an RE2 regular expression (case-sensitive unless it starts with (?i))"`

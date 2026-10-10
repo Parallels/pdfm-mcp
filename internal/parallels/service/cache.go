@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/models"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/models"
 )
 
 // ErrEmptyCache is returned when the cache has never been populated and no

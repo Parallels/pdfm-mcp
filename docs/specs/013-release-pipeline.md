@@ -1,7 +1,7 @@
 # Spec 013: Release Pipeline (GoReleaser, signing, notarization, GitHub Releases)
 
 | | |
-|---|---|
+| --- | --- |
 | Status | Implemented (local verification complete 2026-10-09; tag rehearsal pending release owner) |
 | Audience | Implementing agents / engineers, release owner |
 | Scope | `.goreleaser.yaml`, tag-triggered `release.yml`, macOS code signing + notarization, checksums/SBOM, Makefile targets, runbook, secrets inventory, publication gate. This is the **foundation** of specs 014 (Homebrew), 015 (MCPB), 016 (MCP Registry) |
@@ -23,7 +23,7 @@ One `git tag vX.Y.Z && git push --tags` produces a **signed, notarized, checksum
 ### Acceptance criteria
 
 1. `make release-check` (`goreleaser check`) and `make release-snapshot` (`goreleaser release --snapshot --clean`, no publishing, no signing) pass locally and in CI on every PR.
-2. Pushing tag `v0.1.0` runs `release.yml` and creates a GitHub Release containing: the universal macOS archive, `checksums.txt`, an SBOM, and a changelog.
+2. Pushing tag `v0.1.0` runs `release.yml` and creates a GitHub Release containing: the universal macOS archive, `checksums.txt`, an SBOM, the install script, and a body with the changelog plus the templated install footer.
 3. The released binary is **Developer ID signed and notarized**: `codesign --verify --strict --verbose=2 pdfm-mcp` passes and a copy downloaded through a browser (quarantine flag set) runs without a Gatekeeper dialog.
 4. `pdfm-mcp --version` on the released binary prints the tag version, commit and build date (the existing `internal/version` ldflags).
 5. A tag with a pre-release suffix (`v0.2.0-rc.1`) creates a GitHub *pre-release* and never triggers downstream channels (014 to 016).
@@ -33,7 +33,7 @@ One `git tag vX.Y.Z && git push --tags` produces a **signed, notarized, checksum
 ## 2. Decisions
 
 | Topic | Decision | Rationale |
-|---|---|---|
+| --- | --- | --- |
 | Tool | GoReleaser v2 (`version: 2`), run via `goreleaser/goreleaser-action` pinned to a major (`~> v2`) | Standard for Go; single config drives archives, checksums, SBOM, notarization and later the Homebrew cask |
 | Targets | `darwin/arm64` + `darwin/amd64` merged into a **universal binary** (`universal_binaries`) | The product only makes sense on a Mac with Parallels Desktop. One binary serves Apple Silicon and Intel, so the MCPB (015) and cask (014) ship a single artifact |
 | CGO | `CGO_ENABLED=0`, `-trimpath` | Static, reproducible, cross-compiled from Linux CI (matches the Makefile) |
@@ -45,11 +45,12 @@ One `git tag vX.Y.Z && git push --tags` produces a **signed, notarized, checksum
 | Checksums + SBOM | `checksums.txt` (sha256) and an SPDX/CycloneDX SBOM via GoReleaser `sboms` (syft) | Needed by MCPB `fileSha256` (015/016) and supply-chain hygiene |
 | Provenance | GitHub artifact attestations (`attestations`) on archives if the org plan supports them; otherwise omitted | Optional hardening; check availability, do not block the release on it |
 | Changelog | Generated from Conventional Commits (`feat`, `fix`, `perf`; excluding `docs`, `test`, `chore`, `ci`) | No hand-written release notes |
-| Module path | Binary is built from module `github.com/cjlapao/pdfm-mcp`, but the remote is `Parallels/pdfm-mcp` | **Open decision** (section 9): rename the module to the org path before the first release so `go install` and ldflags match the repo. ldflags in this spec use the `MODULE` Makefile variable's value, so only that value changes |
+| Release description | Changelog bullets on top; a templated `release.footer` **appended at the bottom** with the common install ways (install-script one-liner, uninstall, Homebrew cask, Claude Desktop MCPB, manual tar.gz) — tag-pinned URLs. Pre-releases (`{{ if .Prerelease }}`) additionally show the version-pinned install command and the `--pre-release` flag; stable-channel lines are marked stable-only. `release.yml` also uploads `scripts/install.sh` itself as a release asset (`gh release upload … --clobber`, all channels) | So someone opening a release sees exactly how to install *that* build, including how to install a canary/beta; no per-release hand editing (goreleaser renders the body as header + changelog + footer) |
+| Module path | Binary is built from module `github.com/Parallels/pdfm-mcp`, but the remote is `Parallels/pdfm-mcp` | **Open decision** (section 9): rename the module to the org path before the first release so `go install` and ldflags match the repo. ldflags in this spec use the `MODULE` Makefile variable's value, so only that value changes |
 
 ## 3. Publication gate (read before anything ships)
 
-The repo is a Parallels corporate repository, and per Parallels policy source code and roadmaps are confidential. **Nothing in 013 to 016 may be published outside Parallels without an explicit approval** from the owner of the project (and Legal for the license). Concretely:
+The repo was created as a Parallels corporate repository and is now public (`Parallels/pdfm-mcp`). **Downstream channels in 013 to 016 (tap, registry) still require an explicit approval** from the owner of the project (and Legal for the license). Concretely:
 
 - Default posture: the repo and its Releases stay **private/internal**. Everything in this spec works in that mode.
 - Choosing a license is a Legal decision. Do not invent one: the repo currently has no `LICENSE`. A proprietary "all rights reserved" notice is a valid placeholder until Legal decides.
@@ -96,9 +97,9 @@ builds:
     mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - -s -w
-      - -X github.com/cjlapao/pdfm-mcp/internal/version.Version={{ .Version }}
-      - -X github.com/cjlapao/pdfm-mcp/internal/version.Commit={{ .ShortCommit }}
-      - -X github.com/cjlapao/pdfm-mcp/internal/version.Date={{ .Date }}
+      - -X github.com/Parallels/pdfm-mcp/internal/version.Version={{ .Version }}
+      - -X github.com/Parallels/pdfm-mcp/internal/version.Commit={{ .ShortCommit }}
+      - -X github.com/Parallels/pdfm-mcp/internal/version.Date={{ .Date }}
 
 universal_binaries:
   - ids: [pdfm-mcp]
@@ -236,7 +237,7 @@ Rules:
 ## 7. Secrets and variables inventory
 
 | Name | Kind | Holds | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `MACOS_SIGN_P12` | secret (`release` env) | base64 of the Developer ID Application `.p12` | `base64 -w0 < cert.p12` (Linux) or `base64 -i cert.p12` (macOS) |
 | `MACOS_SIGN_PASSWORD` | secret | password for the `.p12` | |
 | `MACOS_NOTARY_KEY` | secret | base64 of the App Store Connect `.p8` API key | |
@@ -252,11 +253,11 @@ Rotation: certificates and API keys have owners and expiry dates recorded in the
 ```makefile
 .PHONY: release-check
 release-check: ## Validate .goreleaser.yaml
-	goreleaser check
+ goreleaser check
 
 .PHONY: release-snapshot
 release-snapshot: ## Local dry run: build, archive, checksum (no publish, no signing)
-	goreleaser release --snapshot --clean --skip=publish,notarize,announce
+ goreleaser release --snapshot --clean --skip=publish,notarize,announce
 ```
 
 `ci.yml` gains a step `goreleaser check` (via `goreleaser/goreleaser-action` with `args: check`) and a snapshot build on PRs touching `.goreleaser.yaml`, `cmd/**`, `internal/version/**`. The existing `make build-all` stays (multi-OS compile check) but is **not** a release artifact source.

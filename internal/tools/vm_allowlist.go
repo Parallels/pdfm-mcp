@@ -6,8 +6,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
-	"github.com/cjlapao/pdfm-mcp/internal/policy"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/policy"
 )
 
 // vmAllow is the process-wide VM allow-list (spec 019), set by server.New.

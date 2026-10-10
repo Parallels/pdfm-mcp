@@ -6,14 +6,14 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
 )
 
 // CloneInput is the argument schema of parallels_vm_clone. Name is
 // required in both modes; all options map 1:1 onto prlctl clone flags.
 type CloneInput struct {
-	VMID              string `json:"vm_id,omitempty" jsonschema:"VM id or name of the source VM to clone"`
+	VMID              string `json:"vm_id,omitempty" jsonschema:"VM id or name of the source VM to clone: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	Name              string `json:"name" jsonschema:"name of the new VM (required)"`
 	Template          bool   `json:"template,omitempty" jsonschema:"make the clone a template"`
 	Dst               string `json:"dst,omitempty" jsonschema:"directory where the clone files are stored (prlctl default if omitted)"`

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
 )
 
 func iP(n int) *int { return &n }

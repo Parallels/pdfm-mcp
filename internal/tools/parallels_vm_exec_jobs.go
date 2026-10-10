@@ -9,7 +9,7 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
 )
 
 // Argument limits of the async exec tools (mirrored by the service, which
@@ -39,7 +39,7 @@ func jobScopeNote(mode PowerMode) string {
 
 // ExecStartInput is the argument schema of parallels_vm_exec_start.
 type ExecStartInput struct {
-	VMID           string `json:"vm_id,omitempty" jsonschema:"VM id or name to run the command in"`
+	VMID           string `json:"vm_id,omitempty" jsonschema:"VM id or name to run the command in: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	Command        string `json:"command" jsonschema:"command line to execute in the guest (Linux guests: bash -c), max 4096 characters"`
 	User           string `json:"user,omitempty" jsonschema:"guest user to run as; defaults to the user currently logged in inside the guest; mutually exclusive with elevated"`
 	Elevated       bool   `json:"elevated,omitempty" jsonschema:"PRIVILEGED: run as the guest system account (root on Linux/macOS, SYSTEM on Windows); mutually exclusive with user"`

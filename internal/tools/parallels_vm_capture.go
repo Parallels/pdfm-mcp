@@ -7,8 +7,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/imaging"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/imaging"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
 )
 
 // maxResultBytes bounds the final PNG handed back to the client. It guards
@@ -18,7 +18,7 @@ const maxResultBytes = 10 << 20
 
 // CaptureInput is the argument schema of parallels_vm_capture.
 type CaptureInput struct {
-	VMID           string `json:"vm_id,omitempty" jsonschema:"VM id or name to capture"`
+	VMID           string `json:"vm_id,omitempty" jsonschema:"VM id or name to capture: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	MaxDimension   int    `json:"max_dimension,omitempty" jsonschema:"longest edge in pixels the image is downscaled to (256-4096, default 1568)"`
 	FullResolution bool   `json:"full_resolution,omitempty" jsonschema:"return the screenshot at native resolution without downscaling"`
 }

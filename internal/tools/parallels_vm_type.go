@@ -8,8 +8,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/keys"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/keys"
 )
 
 // maxTypeText bounds the text argument of parallels_vm_type.
@@ -21,7 +21,7 @@ const defaultTypeDelayMS = 200
 
 // TypeTextInput is the argument schema of parallels_vm_type.
 type TypeTextInput struct {
-	VMID string `json:"vm_id,omitempty" jsonschema:"VM id or name to type into"`
+	VMID string `json:"vm_id,omitempty" jsonschema:"VM id or name to type into: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	Text string `json:"text" jsonschema:"ASCII text to type (letters, digits, space, punctuation). Escapes: \\n = Enter, \\t = Tab, \\\\ = literal backslash; a backslash before any other character is typed literally. Max 4096 characters"`
 	// DelayMS is the inter-key delay in ms (0-5000); nil means the default
 	// (200 ms). A pointer, not an int, so an explicit 0 stays 0.

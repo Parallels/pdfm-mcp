@@ -1,7 +1,7 @@
 package tools
 
 import (
-	"github.com/cjlapao/pdfm-mcp/internal/orchestrator"
+	"github.com/Parallels/pdfm-mcp/internal/orchestrator"
 )
 
 // RegisterSteps registers every parallels_vm_* tool — except
@@ -56,9 +56,9 @@ func RegisterSteps(reg *orchestrator.Registry) {
 	reg.Register(orchestrator.FromHandler[VMDecryptInput, VMEncryptDecryptOutput](
 		"parallels_vm_decrypt", descVMDecrypt, true,
 		powerInputSchema[VMDecryptInput](PowerVM), VMDecrypt))
-	reg.Register(orchestrator.FromHandler[VMChangePasswordInput, VMChangePasswordOutput](
-		"parallels_vm_change_password", descVMChangePassword, true,
-		powerInputSchema[VMChangePasswordInput](PowerVM), VMChangePassword))
+	reg.Register(orchestrator.FromHandler[VMChangeEncryptionPasswordInput, VMChangeEncryptionPasswordOutput](
+		"parallels_vm_change_encryption_password", descVMChangeEncryptionPassword, true,
+		powerInputSchema[VMChangeEncryptionPasswordInput](PowerVM), VMChangeEncryptionPassword))
 
 	reg.Register(orchestrator.FromHandler[VMReclaimDiskInput, VMReclaimDiskOutput](
 		"parallels_vm_reclaim_disk", descVMReclaimDisk, true,

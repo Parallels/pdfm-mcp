@@ -82,7 +82,7 @@ Use an absolute path to the binary.
 
 ```sh
 make claude-add   # or:
-claude mcp add pdfm-mcp -- /Users/cjlapao/code/GitHub/pdfm-mcp/bin/pdfm-mcp
+claude mcp add pdfm-mcp -- /path/to/pdfm-mcp/bin/pdfm-mcp
 claude mcp list
 ```
 
@@ -96,7 +96,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "pdfm-mcp": {
-      "command": "/Users/cjlapao/code/GitHub/pdfm-mcp/bin/pdfm-mcp",
+      "command": "/path/to/pdfm-mcp/bin/pdfm-mcp",
       "args": ["--log-level", "debug"],
       "env": { "PDFM_MCP_LOG_FILE": "/tmp/pdfm-mcp.log" }
     }
@@ -160,7 +160,7 @@ When both `prlctl` and `prlsrvctl` are found at startup (PATH, then `/usr/local/
 | `parallels_vm_clone` | fleet + VM | Create a copy of a VM (`prlctl clone`): required `name`; options `template`, `dst` (destination dir), `regenerate_src_uuid`, `linked` (+ `snapshot_id`), `detach_external_hdd` yes/no. The source VM is never modified; full clones need free disk for all VM files |
 | `parallels_vm_encrypt` | fleet + VM | Encrypt a VM and all of its data with a password (`prlctl encrypt`). The VM must be stopped; `dry_run` checks the prerequisites without encrypting (and without a password). The password is fed to prlctl over stdin and never appears in argv or logs. A real run takes as long as the VM's data (minutes to hours on large VMs) |
 | `parallels_vm_decrypt` | fleet + VM | Remove the encryption from an encrypted VM (`prlctl decrypt`). Requires the current password (stdin, never logged); a wrong password is a clean tool error and leaves the VM encrypted. `dry_run` checks prerequisites — but on an encrypted VM prlctl requires the password to authorise the check |
-| `parallels_vm_change_password` | fleet + VM | Change the encryption password of an encrypted VM (`prlctl change-passwd`): `current_password` + `new_password`, both fed to prlctl over stdin (no confirmation prompt), never logged |
+| `parallels_vm_change_encryption_password` | fleet + VM | Change the encryption password of an encrypted VM (`prlctl change-passwd`): `current_password` + `new_password`, both fed to prlctl over stdin (no confirmation prompt), never logged |
 | `parallels_vm_reclaim_disk` | fleet + VM | Reclaim disk space a VM no longer uses (`prlctl reclaim-disk`) after deleting files in the guest. `estimate` reports the disk-space breakdown in bytes without reclaiming (read-only, any power state); a real run frees the space (as long as the disk). `allow_shutdown` may stop a running VM first. Encrypted VMs need their current password (stdin, never logged); a real run on an encrypted VM is not supported by prlctl (estimate works) |
 | `parallels_vm_snapshot_create` | fleet + VM | Take a snapshot of a VM (`prlctl snapshot`): a checkpoint it can later be reverted to. Works on running and stopped VMs (state preserved); optional `name`/`description`; the new braced id comes back in `snapshot_id`. Snapshots consume host disk for their deltas. Encrypted VMs need their current password (stdin, never logged) |
 | `parallels_vm_snapshot_list` | fleet + VM | List a VM's snapshots (`prlctl snapshot-list`): the whole tree by default (id, name, date, state, current, parent — date-sorted, empty list when the VM has none), one snapshot with `snapshot_id` (braces optional, unknown ids report `not_found`), or the ASCII tree with `tree`. Read-only. Encrypted VMs need their current password (stdin, never logged) |
@@ -204,7 +204,7 @@ When both `prlctl` and `prlsrvctl` are found at startup (PATH, then `/usr/local/
   tests only ever run the estimate; run a real reclaim deliberately and
   prefer a scratch VM when in doubt.
 - **The encryption tools handle secrets.** `parallels_vm_encrypt`,
-  `parallels_vm_decrypt` and `parallels_vm_change_password` are annotated
+  `parallels_vm_decrypt` and `parallels_vm_change_encryption_password` are annotated
   `destructive: true` and take passwords as arguments. Passwords go to
   prlctl over stdin only — never argv, never logs, never error messages —
   but they do pass through the MCP client (and its transcript). A real

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
 )
 
 const (

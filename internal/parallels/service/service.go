@@ -17,8 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/models"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/models"
 )
 
 // DefaultCacheTTL is how long the VM list cache stays fresh.

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/interfaces"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/interfaces"
 )
 
 // fakeProc is a controllable streaming process. It ends when finish is

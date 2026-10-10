@@ -5,14 +5,14 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels"
+	"github.com/Parallels/pdfm-mcp/internal/parallels"
 )
 
 // VMDecryptInput is the argument schema for the parallels_vm_decrypt tool.
 // Password handling follows parallels_vm_encrypt (omittable only with
 // dry_run).
 type VMDecryptInput struct {
-	VMID     string `json:"vm_id,omitempty" jsonschema:"VM id or name to target"`
+	VMID     string `json:"vm_id,omitempty" jsonschema:"VM id or name to target: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
 	Password string `json:"password,omitempty" jsonschema:"current encryption password, 1-256 printable characters, fed to prlctl over stdin and never logged; required unless dry_run is true"`
 	DryRun   bool   `json:"dry_run,omitempty" jsonschema:"check the prerequisites without decrypting (no password needed)"`
 }

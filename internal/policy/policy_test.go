@@ -5,30 +5,30 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cjlapao/pdfm-mcp/internal/parallels/models"
+	"github.com/Parallels/pdfm-mcp/internal/parallels/models"
 )
 
 func TestClassificationTable(t *testing.T) {
 	want := map[string]Class{
-		"parallels_list_vms":           ClassRead,
-		"parallels_vm_info":            ClassRead,
-		"parallels_vm_capture":         ClassRead,
-		"parallels_vm_observe":         ClassRead,
-		"parallels_vm_exec_result":     ClassRead,
-		"parallels_vm_exec":            ClassExec,
-		"parallels_vm_exec_start":      ClassExec,
-		"parallels_vm_exec_cancel":     ClassExec,
-		"parallels_vm_send_key":        ClassInput,
-		"parallels_vm_type":            ClassInput,
-		"parallels_vm_start":           ClassPower,
-		"parallels_vm_stop":            ClassPower,
-		"parallels_vm_clone":           ClassPower,
-		"parallels_vm_delete":          ClassDestructive,
-		"parallels_vm_reclaim_disk":    ClassDestructive,
-		"parallels_vm_snapshot_switch": ClassDestructive,
-		"parallels_vm_encrypt":         ClassSecret,
-		"parallels_vm_change_password": ClassSecret,
-		"parallels_vm_sequence":        ClassSequence,
+		"parallels_list_vms":                      ClassRead,
+		"parallels_vm_info":                       ClassRead,
+		"parallels_vm_capture":                    ClassRead,
+		"parallels_vm_observe":                    ClassRead,
+		"parallels_vm_exec_result":                ClassRead,
+		"parallels_vm_exec":                       ClassExec,
+		"parallels_vm_exec_start":                 ClassExec,
+		"parallels_vm_exec_cancel":                ClassExec,
+		"parallels_vm_send_key":                   ClassInput,
+		"parallels_vm_type":                       ClassInput,
+		"parallels_vm_start":                      ClassPower,
+		"parallels_vm_stop":                       ClassPower,
+		"parallels_vm_clone":                      ClassPower,
+		"parallels_vm_delete":                     ClassDestructive,
+		"parallels_vm_reclaim_disk":               ClassDestructive,
+		"parallels_vm_snapshot_switch":            ClassDestructive,
+		"parallels_vm_encrypt":                    ClassSecret,
+		"parallels_vm_change_encryption_password": ClassSecret,
+		"parallels_vm_sequence":                   ClassSequence,
 	}
 	for name, c := range want {
 		if got := Classify(name); got != c {
