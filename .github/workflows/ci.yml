@@ -1,15 +1,18 @@
 name: ci
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
 
 permissions:
   contents: read
 
+# OCR is Apple Vision compiled in via cgo (spec 022): the product is
+# macOS-only, so every job that builds or runs Go code runs on a macOS
+# runner. The script/registry jobs build no Go and stay on Linux.
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -21,3 +24,119 @@ jobs:
       - run: make fmt-check vet test
       - run: make test-e2e
       - run: make build-all
+
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: make test-scripts
+      - name: Validate VERSION and release notes
+        run: |
+          python3 -B scripts/version.py current
+          python3 -B scripts/changelog.py notes --version "$(cat VERSION)" --output "$RUNNER_TEMP/release-notes.md"
+
+  release-config:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Detect release-relevant changes
+        id: changes
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          rel=true; pkg=true
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            git fetch --no-tags origin "$BASE_REF"
+            files="$(git diff --name-only "origin/${BASE_REF}...HEAD")"
+            echo "$files" | grep -Eq '^(VERSION|CHANGELOG\.md|Makefile|\.goreleaser\.yaml|cmd/|internal/version/|scripts/|packaging/|\.github/workflows/(release|create_release_pr)\.yml)' || rel=false
+            echo "$files" | grep -Eq '^(packaging/|scripts/build-mcpb\.sh)' || pkg=false
+          fi
+          echo "release=$rel" >> "$GITHUB_OUTPUT"
+          echo "packaging=$pkg" >> "$GITHUB_OUTPUT"
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: "~> v2"
+          args: check
+      - name: Read base version
+        id: version
+        run: python3 -B scripts/version.py current
+      - uses: anchore/sbom-action/download-syft@v0
+        if: steps.changes.outputs.release == 'true'
+      - uses: goreleaser/goreleaser-action@v7
+        if: steps.changes.outputs.release == 'true'
+        with:
+          version: "~> v2"
+          args: release --snapshot --clean --skip=publish,notarize,announce
+        env:
+          GORELEASER_CURRENT_TAG: v${{ steps.version.outputs.version }}
+      - name: mcpb validate (needs icon + pinned mcpb version)
+        if: steps.changes.outputs.packaging == 'true' && hashFiles('packaging/mcpb/icon.png') != ''
+        run: |
+          # macOS lipo requires a real Mach-O even with MCPB_ALLOW_THIN.
+          MCPB_ALLOW_THIN=1 ./scripts/build-mcpb.sh 0.0.0-ci /usr/bin/true dist-mcpb
+
+  # Spec 016 section 10.2: validate a rendered server.json against the schema
+  # URL declared in $schema on every PR touching the registry template or the
+  # render script. The schema is cached per version date.
+  registry-server-json:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0 }
+      - name: Detect registry-relevant changes
+        id: changes
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          run=false
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            git fetch --no-tags origin "$BASE_REF"
+            git diff --name-only "origin/${BASE_REF}...HEAD" | \
+              grep -Eq '^(packaging/registry/|scripts/render-server-json\.sh)$' && run=true
+          else
+            run=true
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          # Schema version date for the cache key, e.g. 2025-12-11.
+          date="$(jq -r '."$schema"' packaging/registry/server.json.tmpl | sed -n 's|.*/schemas/\([0-9-][0-9-]*\)/.*|\1|p')"
+          echo "schema-date=$date" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v5
+        if: steps.changes.outputs.run == 'true'
+        with: { node-version: "lts/*" }
+      - name: Cache the registry schema
+        if: steps.changes.outputs.run == 'true'
+        id: schemacache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/mcp-registry-schema.json
+          key: mcp-server-schema-${{ steps.changes.outputs.schema-date }}
+      - name: Validate rendered server.json against the live schema
+        if: steps.changes.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          schema_url="$(jq -r '."$schema"' packaging/registry/server.json.tmpl)"
+          if [ ! -s /tmp/mcp-registry-schema.json ]; then
+            curl -fsSL -o /tmp/mcp-registry-schema.json "$schema_url"
+          fi
+          work="$(mktemp -d)"
+          # CI-only dummy values: the render script needs a 64-hex hash and a
+          # syntactically valid name; identity is checked by the live publish.
+          printf 'a1b2c3d4e5f60718293a4b5c6d7e8f901234567890abcdef1234567890abcdef' > "$work/hash"
+          ./scripts/render-server-json.sh "io.github.example/pdfm-mcp" "0.0.0-ci" "$work/hash" "$work/server.json"
+          npm install --no-audit --no-fund --silent --prefix "$work" ajv ajv-formats >/dev/null
+          NODE_PATH="$work/node_modules" node - "$work/server.json" <<'JS'
+          const Ajv = require("ajv");
+          const addFormats = require("ajv-formats");
+          const ajv = addFormats(new Ajv({ strict: false, schemaId: "auto" }));
+          const schema = require("/tmp/mcp-registry-schema.json");
+          const data = require(process.argv[2]);
+          if (!ajv.validate(schema, data)) {
+            console.error(ajv.errorsText(null, { multiLine: true }));
+            process.exit(1);
+          }
+          console.log("server.json is valid against the registry schema");
+          JS

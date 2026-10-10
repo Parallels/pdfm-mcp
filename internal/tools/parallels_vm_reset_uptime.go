@@ -19,7 +19,7 @@ func VMResetUptime(ctx context.Context, _ *mcp.CallToolRequest, in PowerVMInput)
 func RegisterParallelsVMResetUptime(s *mcp.Server, mode PowerMode) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:         "parallels_vm_reset_uptime",
-		Description:  powerDescription("Resets the VM uptime counter, including the counter start date/time (prlctl reset-uptime).", mode),
+		Description:  powerDescription(descVMResetUptime, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false},
 		InputSchema:  powerInputSchema[PowerVMInput](mode),
 		OutputSchema: outputSchemaFor[PowerOutput]("parallels_vm_reset_uptime"),

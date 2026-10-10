@@ -17,7 +17,7 @@ func VMStart(ctx context.Context, _ *mcp.CallToolRequest, in PowerVMInput) (*mcp
 func RegisterParallelsVMStart(s *mcp.Server, mode PowerMode) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:         "parallels_vm_start",
-		Description:  powerDescription("Starts a stopped VM, or resumes a paused one (prlctl start).", mode),
+		Description:  powerDescription(descVMStart, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false},
 		InputSchema:  powerInputSchema[PowerVMInput](mode),
 		OutputSchema: outputSchemaFor[PowerOutput]("parallels_vm_start"),

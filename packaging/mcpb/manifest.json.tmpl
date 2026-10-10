@@ -1,0 +1,55 @@
+{
+  "manifest_version": "0.3",
+  "name": "pdfm-mcp",
+  "display_name": "Parallels Desktop VMs",
+  "version": "@VERSION@",
+  "description": "Inspect and control Parallels Desktop virtual machines from Claude: list, power, screenshot, run commands, type keys, and run multi-step sequences.",
+  "long_description": "pdfm-mcp lets Claude work with Parallels Desktop VMs on this Mac. It can list VMs, start/stop/suspend them, take screenshots of a VM screen, run commands inside the guest, send keyboard input, and run multi-step automation sequences. Requires Parallels Desktop on macOS.\n\nPrivacy: screenshots and command output are returned to Claude and therefore reach your AI provider. Do not use it on VMs showing credentials or confidential data unless that is acceptable for your organization. Everything runs locally; the server itself makes no network calls.",
+  "author": { "name": "Parallels", "url": "https://www.parallels.com" },
+  "repository": { "type": "git", "url": "https://github.com/Parallels/pdfm-mcp.git" },
+  "homepage": "https://github.com/Parallels/pdfm-mcp",
+  "support": "https://github.com/Parallels/pdfm-mcp/issues",
+  "icon": "icon.png",
+  "license": "<SPDX id or 'Proprietary' as decided by Legal>",
+  "keywords": ["parallels", "virtual machines", "vm", "automation", "macos"],
+  "server": {
+    "type": "binary",
+    "entry_point": "server/pdfm-mcp",
+    "mcp_config": {
+      "command": "${__dirname}/server/pdfm-mcp",
+      "args": [],
+      "env": {
+        "PDFM_MCP_VM_ID": "${user_config.vm_id}",
+        "PDFM_MCP_LOG_LEVEL": "${user_config.log_level}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "parallels_list_vms", "description": "List Parallels VMs with state and hardware" },
+    { "name": "parallels_vm_info", "description": "Full details of the target VM (single-VM mode)" },
+    { "name": "parallels_vm_start", "description": "Start or resume a VM" },
+    { "name": "parallels_vm_stop", "description": "Stop a VM (graceful or forced)" },
+    { "name": "parallels_vm_capture", "description": "Take a screenshot of a VM" },
+    { "name": "parallels_vm_exec", "description": "Run a command inside the guest" },
+    { "name": "parallels_vm_sequence", "description": "Run a multi-step automation sequence with waits and conditions" }
+  ],
+  "tools_generated": true,
+  "user_config": {
+    "vm_id": {
+      "type": "string",
+      "title": "Target VM (optional)",
+      "description": "VM id or name. Leave empty to work with all VMs; set it to restrict this server to a single VM.",
+      "required": false
+    },
+    "log_level": {
+      "type": "string",
+      "title": "Log level",
+      "description": "debug, info, warn or error (default info).",
+      "default": "info",
+      "required": false
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin"]
+  }
+}

@@ -37,8 +37,8 @@ make check       # fmt, vet, lint, CGO_ENABLED=1 go test -race ./...
 make test-e2e    # go test -tags e2e ./test/e2e/... (skips gating test w/o prlctl)
 make smoke       # starts the server on stdio; expect tool list (with the
                  # eight parallels_vm_* power tools from spec 003):
-                 #   fleet mode:  greet, parallels_list_vms, + 8 power tools
-                 #   VM mode:     greet, parallels_list_vms, parallels_vm_info,
+                 #   fleet mode:  parallels_list_vms, + 8 power tools
+                 #   VM mode:     parallels_list_vms, parallels_vm_info,
                  #                + 8 power tools
 ```
 
@@ -52,7 +52,7 @@ Expected: all green, no stdout pollution, no `panic` in stderr.
 
 Client (or MCP inspector):
 
-1. `tools/list` → `greet`, `parallels_list_vms` — **not** `parallels_vm_info`.
+1. `tools/list` → `parallels_list_vms` only — **not** `parallels_vm_info`.
 2. `tools/call` `parallels_list_vms` `{}` →
    `count` == number of VMs, each entry has `ID`, `Name`, `State`,
    `Hardware.cpu.cpus`, `fetched_at` (RFC3339), `source: "cache"`
@@ -68,7 +68,7 @@ Client (or MCP inspector):
 ./bin/pdfm-mcp --vm-id 90f90e2b-e19f-4429-86b3-b5146bc860d4   # UUID works
 ```
 
-1. `tools/list` → `greet`, `parallels_list_vms`, `parallels_vm_info`.
+1. `tools/list` → `parallels_list_vms`, `parallels_vm_info`.
 2. `parallels_list_vms` → `count: 1`, the only entry is the target VM.
 3. `parallels_vm_info` → `vm` is the **exact prlctl JSON object** (compare
    against `prlctl list ubuntu_github_builder -a -i --json` manually; fields
@@ -91,7 +91,7 @@ PATH=/usr/bin:/bin ./bin/pdfm-mcp     # only meaningful without /usr/local/bin
 ```
 
 1. Startup log line: `parallels module disabled: Parallels Desktop CLI not found`.
-2. `tools/list` → only `greet`; `greet` still works.
+2. `tools/list` → no tools at all; the server still starts and speaks MCP.
 
 On the reference Mac the fallback dirs intentionally find
 `/usr/local/bin/prlctl`, so a missing-PATH run there is still "enabled" —

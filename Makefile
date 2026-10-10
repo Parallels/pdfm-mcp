@@ -8,7 +8,7 @@ CMD         := ./cmd/pdfm-mcp
 BIN_DIR     := bin
 DIST_DIR    := dist
 
-VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+VERSION ?= $(shell cat VERSION)-dev
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
 DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
@@ -21,9 +21,11 @@ LDFLAGS := -s -w \
 DEBUG_GCFLAGS := all=-N -l
 DEBUG_LDFLAGS := -X $(MODULE)/internal/version.Version=$(VERSION)-debug
 
-PLATFORMS := darwin/arm64 darwin/amd64 linux/amd64 linux/arm64 windows/amd64
+# macOS-only product: OCR is Apple Vision compiled in via cgo (spec 022),
+# so there is no non-darwin build path.
+PLATFORMS := darwin/arm64 darwin/amd64
 
-export CGO_ENABLED ?= 0
+export CGO_ENABLED ?= 1
 
 .PHONY: help
 help: ## Show this help
@@ -124,3 +126,56 @@ claude-remove: ## Unregister from Claude Code
 .PHONY: clean
 clean: ## Remove build outputs
 	rm -rf $(BIN_DIR) $(DIST_DIR) coverage.out
+
+##@ Release
+
+.PHONY: version version-get
+version: ## Show the base release version
+	python3 -B scripts/version.py current
+
+version-get: version
+
+VERSION_TYPE ?= patch
+.PHONY: version-set increment-version
+version-set: ## Increment VERSION locally; VERSION_TYPE=major|minor|patch
+	python3 -B scripts/version.py bump --type "$(VERSION_TYPE)"
+
+increment-version: version-set
+
+# Version for local bundle builds: the build version without a leading
+# "v" when it is valid SemVer, else 0.0.0-dev.
+MCPB_VERSION ?= $(shell v=$$(echo "$(VERSION)" | sed 's/^v//'); echo "$$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$$' && echo "$$v" || echo 0.0.0-dev)
+# Pinned @anthropic-ai/mcpb version; empty = read packaging/mcpb/mcpb-version.txt.
+MCPB_PIN ?=
+export MCPB_PIN
+comma := ,
+
+.PHONY: release-check
+release-check: ## Validate .goreleaser.yaml
+	goreleaser check
+
+.PHONY: release-snapshot
+release-snapshot: ## Local dry run: build, archive, checksum (no publish, no signing)
+	GORELEASER_CURRENT_TAG="v$$(cat VERSION)" goreleaser release --snapshot --clean --skip=publish,notarize,announce$(if $(shell command -v syft 2>/dev/null),,$(comma)sbom)
+
+.PHONY: mcpb
+mcpb: build ## Build dist/pdfm-mcp-<version>.mcpb from the local (thin, unsigned) binary: dev only
+	MCPB_ALLOW_THIN=1 ./scripts/build-mcpb.sh "$(MCPB_VERSION)" "$(BIN_DIR)/$(BINARY)" "$(DIST_DIR)"
+
+.PHONY: mcpb-validate
+mcpb-validate: ## Validate packaging/mcpb/manifest.json.tmpl with the pinned mcpb CLI (needs Node)
+	@pin="$(or $(MCPB_PIN),$$(head -n1 packaging/mcpb/mcpb-version.txt 2>/dev/null || true))"; \
+	[[ -n $$pin ]] || { echo "no mcpb pin: set MCPB_PIN or packaging/mcpb/mcpb-version.txt" >&2; exit 1; }; \
+	command -v npx >/dev/null 2>&1 || { echo "npx (Node.js) is required" >&2; exit 1; }; \
+	tmp=$$(mktemp -d); trap 'rm -rf "$$tmp"' EXIT; \
+	sed "s|@VERSION@|0.0.0-dev|g" packaging/mcpb/manifest.json.tmpl > "$$tmp/manifest.json"; \
+	cp packaging/mcpb/icon.png "$$tmp/icon.png"; \
+	(cd "$$tmp" && npx --yes "@anthropic-ai/mcpb@$$pin" validate manifest.json)
+
+.PHONY: render-server-json
+render-server-json: ## Render registry server.json: NAME=... VERSION_NUM=x.y.z SHA_FILE=... OUT=server.json
+	./scripts/render-server-json.sh "$(NAME)" "$(VERSION_NUM)" "$(SHA_FILE)" "$(or $(OUT),server.json)"
+
+.PHONY: test-scripts
+test-scripts: ## Run release/packaging script tests (bash + Python, no network)
+	bash scripts/test/run.sh

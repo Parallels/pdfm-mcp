@@ -17,7 +17,7 @@ func VMRestart(ctx context.Context, _ *mcp.CallToolRequest, in PowerVMInput) (*m
 func RegisterParallelsVMRestart(s *mcp.Server, mode PowerMode) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "parallels_vm_restart",
-		Description: powerDescription("Gracefully shuts the VM down and starts it again (prlctl restart).", mode),
+		Description: powerDescription(descVMRestart, mode),
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint:    false,
 			DestructiveHint: truePtr(),

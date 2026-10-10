@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Ready |
+| Status | Implemented |
 | Audience | Implementing agents / engineers |
 | Scope | `parallels_vm_capture` tool; `Capture` on the Parallels service (temp file → memory → cleanup); `internal/imaging` PNG downscaler; MCP image content result; tests; QA doc |
 | Out of scope | Capturing a sub-area/region, video/recording, OCR, JPEG/WebP output, `prlctl exec`-based or guest-agent screenshots, persisting screenshots — follow-up specs |
@@ -366,9 +366,17 @@ func RegisterParallelsVMCapture(s *mcp.Server, mode PowerMode) {
 - **VM state requirements.** Assumed the VM must be running (and possibly needs a display). Behaviour for paused or suspended VMs is surfaced as prlctl's error; confirm in QA and document the exact messages.
 - **Multiple displays.** The Parallels docs describe a single `--file` target; what is captured for multi-monitor guests is unverified.
 - **Client image limits.** Individual clients may cap image size or count per result. The 1568 px default and the 10 MB result cap are conservative; tune after testing with Claude Desktop and Claude Code.
-- **SDK result handling** for non-nil `CallToolResult` + typed output (see 6.1) is unverified against the installed SDK version.
+- **SDK result handling** for non-nil `CallToolResult` + typed output (see 6.1) is verified against the installed go-sdk v1.8.0: the supplied `Content` is kept and the typed output is attached as `StructuredContent`. No fallback needed (covered by the in-memory protocol test).
 - The prlctl help text and an actual run on the installed version (`prlctl capture --help`) are the source of truth for flags if they differ from the documentation quoted in this spec.
 
 ### Deviations (fill in during implementation)
 
-_None yet._
+- `readCapture` closes the file explicitly (`f.Close()` with the error
+  propagated when the read succeeded) instead of `defer f.Close()`: the repo
+  lint (errcheck) rejects unchecked `Close` returns. Read-then-close
+  semantics are unchanged.
+- The e2e opt-in real capture runs against the **fleet** session
+  (`PDFM_MCP_E2E_CAPTURE_VM` + explicit `vm_id`), which matches the section 9
+  contract; VM mode would correctly reject the explicit `vm_id`.
+- Otherwise as specified. The section 6.1 SDK verification resolved
+  in favour of the main path (no fallback needed).

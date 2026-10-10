@@ -44,17 +44,24 @@ type PowerOutput struct {
 
 // resolvePowerTarget applies the mode contract to the raw vm_id argument:
 // fleet mode requires it, VM mode uses the configured target and rejects an
-// explicit value (a single-VM-scoped server must not touch other VMs).
+// explicit value (a single-VM-scoped server must not touch other VMs). The
+// VM allow-list (--allow-vms) is enforced here for every VM-scoped tool.
 func resolvePowerTarget(svc interfaces.ParallelsService, explicit string) (string, error) {
 	explicit = strings.TrimSpace(explicit)
 	if explicit != "" {
 		if svc.VMID() != "" {
 			return "", errors.New("vm_id must be omitted: this server targets a specific VM (started with --vm-id)")
 		}
+		if err := authorizeVM(svc, explicit); err != nil {
+			return "", err
+		}
 		return explicit, nil
 	}
 	if svc.VMID() == "" {
 		return "", errors.New("vm_id is required: this server runs in fleet mode (started without --vm-id)")
+	}
+	if err := authorizeVM(svc, svc.VMID()); err != nil {
+		return "", err
 	}
 	return svc.VMID(), nil
 }
@@ -74,14 +81,24 @@ func runPower(ctx context.Context, op interfaces.PowerOp, inVMID string, kill, d
 }
 
 // powerInputSchema infers the input schema for the given input type and,
-// in fleet mode, makes vm_id required.
+// in fleet mode, makes vm_id required (on top of whatever the type already
+// declares required, e.g. the exec tool's command). Nullable pointer fields
+// are split into single-type anyOf branches (see splitNullableUnions) so
+// the wire schema stays portable to single-type dialects.
 func powerInputSchema[T any](mode PowerMode) *jsonschema.Schema {
 	schema, err := jsonschema.For[T](&jsonschema.ForOptions{})
 	if err != nil {
 		panic("tools: power input schema: " + err.Error())
 	}
+	splitNullableUnions(schema)
+	pinBareNodes(schema)
 	if mode == PowerFleet {
-		schema.Required = []string{"vm_id"}
+		for _, r := range schema.Required {
+			if r == "vm_id" {
+				return schema
+			}
+		}
+		schema.Required = append(schema.Required, "vm_id")
 	}
 	return schema
 }
@@ -96,5 +113,10 @@ func powerDescription(what string, mode PowerMode) string {
 
 func truePtr() *bool {
 	b := true
+	return &b
+}
+
+func falsePtr() *bool {
+	b := false
 	return &b
 }

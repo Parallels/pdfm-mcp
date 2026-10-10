@@ -1,0 +1,79 @@
+name: Create Release PR
+run-name: "Create release PR (${{ inputs.version }} bump)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version bump type
+        required: true
+        type: choice
+        default: patch
+        options: [patch, minor, major]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write                    # ensure the release-request label exists
+
+concurrency:
+  group: create-release-pr
+  cancel-in-progress: false
+
+jobs:
+  create-release-pr:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GH_WORKFLOW_TOKEN || github.token }}
+    steps:
+      - name: Require main
+        run: |
+          [[ "$GITHUB_REF" == refs/heads/main ]] || { echo 'Run this workflow from main' >&2; exit 1; }
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+          token: ${{ env.GH_TOKEN }}
+      - name: Configure git
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          gh auth setup-git --hostname github.com
+      - name: Bump VERSION
+        id: version
+        env:
+          BUMP_TYPE: ${{ inputs.version }}
+        run: python3 -B scripts/version.py bump --type "$BUMP_TYPE"
+      - name: Create release branch
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git checkout -b "release/${NEW_VERSION}"
+      - name: Collect merged changelog entries
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh label create release-request --description 'Reviewed version bump and changelog' --color 0e8a16 --force
+          until=$(git show -s --format=%cI HEAD)
+          since=$(gh pr list --base main --state merged --label release-request --search "merged:<=${until}" --limit 1000 \
+            --json mergedAt --jq '[.[].mergedAt] | max // empty')
+          search="merged:<=${until} -label:release-request"
+          if [[ -n "$since" ]]; then search="merged:>${since} $search"; fi
+          gh pr list --base main --state merged --search "$search" --limit 1000 \
+            --json number,title,body,mergedAt,labels > "$RUNNER_TEMP/merged-prs.json"
+          python3 -B scripts/changelog.py generate --version "$NEW_VERSION" --prs "$RUNNER_TEMP/merged-prs.json"
+          python3 -B scripts/changelog.py notes --version "$NEW_VERSION" --output "$RUNNER_TEMP/release-pr.md"
+          printf '\nReview VERSION and these notes, then merge to main. Run Release with canary, beta or production.\n' >> "$RUNNER_TEMP/release-pr.md"
+      - name: Commit, push and open PR
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          git add VERSION CHANGELOG.md
+          git -c commit.gpgsign=false commit -m "chore(release): bump to ${NEW_VERSION}"
+          # Normal push: an existing release branch is never overwritten.
+          git push --set-upstream origin "release/${NEW_VERSION}"
+          gh pr create --title "Release: ${NEW_VERSION}" --body-file "$RUNNER_TEMP/release-pr.md" \
+            --base main --head "release/${NEW_VERSION}" --label release-request

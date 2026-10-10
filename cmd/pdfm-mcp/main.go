@@ -13,6 +13,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/cjlapao/pdfm-mcp/internal/config"
+	"github.com/cjlapao/pdfm-mcp/internal/parallels"
 	"github.com/cjlapao/pdfm-mcp/internal/server"
 	"github.com/cjlapao/pdfm-mcp/internal/version"
 )
@@ -40,6 +41,8 @@ func run() int {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	// Kill any background exec jobs (spec 018) when the server exits.
+	defer parallels.Shutdown()
 
 	if err := server.New(logger, cfg).Run(ctx, &mcp.StdioTransport{}); err != nil {
 		logger.Error("server exited with error", "err", err)

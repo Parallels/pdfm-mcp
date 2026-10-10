@@ -17,7 +17,7 @@ func VMPause(ctx context.Context, _ *mcp.CallToolRequest, in PowerVMInput) (*mcp
 func RegisterParallelsVMPause(s *mcp.Server, mode PowerMode) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:         "parallels_vm_pause",
-		Description:  powerDescription("Pauses a running VM (prlctl pause).", mode),
+		Description:  powerDescription(descVMPause, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false},
 		InputSchema:  powerInputSchema[PowerVMInput](mode),
 		OutputSchema: outputSchemaFor[PowerOutput]("parallels_vm_pause"),

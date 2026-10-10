@@ -107,6 +107,9 @@ func GetInstance() interfaces.ParallelsService {
 
 // Reset discards the singleton (tests only).
 func Reset() {
+	if instance != nil {
+		instance.jobs.shutdown()
+	}
 	once = sync.Once{}
 	instance = nil
 }
@@ -120,6 +123,7 @@ type service struct {
 	runner        CommandRunner
 	cache         *vmCache
 	fallbackDirs  []string
+	jobs          *jobManager
 
 	targetMu   sync.RWMutex
 	resolvedID string // id resolved from a name by the last fetch
@@ -148,6 +152,7 @@ func newService(opts ...Option) *service {
 		logger:       o.logger,
 		runner:       o.runner,
 		cache:        newVMCache(o.cacheTTL),
+		jobs:         newJobManager(o.logger),
 		vmID:         o.vmID,
 		fallbackDirs: fallbackDirs,
 	}
@@ -228,6 +233,40 @@ func (s *service) VMRaw(ctx context.Context, force bool) (interfaces.VMRawResult
 	return interfaces.VMRawResult{Blob: blob, FetchedAt: fetchedAt, Refreshed: refreshed}, nil
 }
 
+// VMInfoRef fetches one VM's full prlctl JSON object live, using the same
+// command as the list fetch but passing the target:
+// `prlctl list <ref> -a -i --json`. The result is not stored in the cache
+// (in fleet mode the cache holds the all-VM list; a single-VM result would
+// only ever update one entry).
+func (s *service) VMInfoRef(ctx context.Context, ref string) (interfaces.VMRawResult, error) {
+	if !s.enabled {
+		return interfaces.VMRawResult{}, ErrNotEnabled
+	}
+	ref, err := ValidateVMRef(ref)
+	if err != nil {
+		return interfaces.VMRawResult{}, err
+	}
+
+	s.logger.Debug("running prlctl list (single VM)", "ref", ref)
+	out, err := s.runner.Run(ctx, s.prlctlPath, "list", ref, "-a", "-i", "--json")
+	if err != nil {
+		s.logger.Warn("prlctl list (single VM) failed", "err", err)
+		return interfaces.VMRawResult{}, err
+	}
+	vms, raw, err := parseListOutput(s.logger, strings.TrimSpace(out))
+	if err != nil {
+		return interfaces.VMRawResult{}, err
+	}
+	if len(vms) == 0 {
+		return interfaces.VMRawResult{}, fmt.Errorf("VM %q not found (prlctl returned no results)", ref)
+	}
+	if len(vms) > 1 {
+		s.logger.Warn("multiple VMs matched the ref", "ref", ref, "matched", len(vms))
+	}
+	blob := append(json.RawMessage(nil), raw[vms[0].ID]...)
+	return interfaces.VMRawResult{Blob: blob, FetchedAt: time.Now(), Refreshed: true}, nil
+}
+
 func (s *service) RefreshCache(ctx context.Context) error {
 	_, err := s.cache.refreshIfStale(ctx, s.fetch, true)
 	return err
@@ -267,29 +306,10 @@ func (s *service) fetch(ctx context.Context) error {
 		s.logger.Warn("prlctl list failed", "err", err)
 		return err
 	}
-	out = strings.TrimSpace(out)
 
-	var blobs []json.RawMessage
-	if out != "" {
-		if err := json.Unmarshal([]byte(out), &blobs); err != nil {
-			s.logger.Debug("unparseable prlctl list output", "head", first500(out))
-			return fmt.Errorf("unparseable output from prlctl list: %w", err)
-		}
-	}
-
-	vms := make([]*models.VM, 0, len(blobs))
-	raw := make(map[string]json.RawMessage, len(blobs))
-	for i, b := range blobs {
-		var vm models.VM
-		if err := json.Unmarshal(b, &vm); err != nil {
-			return fmt.Errorf("parse VM entry %d: %w", i, err)
-		}
-		if vm.ID == "" {
-			return fmt.Errorf("VM entry %d is missing its ID", i)
-		}
-		vm.Normalize()
-		vms = append(vms, &vm)
-		raw[vm.ID] = b
+	vms, raw, err := parseListOutput(s.logger, strings.TrimSpace(out))
+	if err != nil {
+		return err
 	}
 
 	s.cache.store(vms, raw)
@@ -305,6 +325,36 @@ func (s *service) fetch(ctx context.Context) error {
 	}
 	s.logger.Debug("VM cache refreshed", "vms", len(vms))
 	return nil
+}
+
+// parseListOutput parses the JSON array printed by
+// `prlctl list ... --json` into typed VMs and the exact raw blob per VM id.
+// An empty string (prlctl prints nothing for a zero-VM result) yields empty
+// slices, not an error.
+func parseListOutput(logger *slog.Logger, out string) ([]*models.VM, map[string]json.RawMessage, error) {
+	var blobs []json.RawMessage
+	if out != "" {
+		if err := json.Unmarshal([]byte(out), &blobs); err != nil {
+			logger.Debug("unparseable prlctl list output", "head", first500(out))
+			return nil, nil, fmt.Errorf("unparseable output from prlctl list: %w", err)
+		}
+	}
+
+	vms := make([]*models.VM, 0, len(blobs))
+	raw := make(map[string]json.RawMessage, len(blobs))
+	for i, b := range blobs {
+		var vm models.VM
+		if err := json.Unmarshal(b, &vm); err != nil {
+			return nil, nil, fmt.Errorf("parse VM entry %d: %w", i, err)
+		}
+		if vm.ID == "" {
+			return nil, nil, fmt.Errorf("VM entry %d is missing its ID", i)
+		}
+		vm.Normalize()
+		vms = append(vms, &vm)
+		raw[vm.ID] = b
+	}
+	return vms, raw, nil
 }
 
 func first500(s string) string {

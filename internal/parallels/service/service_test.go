@@ -63,6 +63,10 @@ const sampleVMsJSON = `[
 const vmOneID = "90f90e2b-e19f-4429-86b3-b5146bc860d4"
 const vmTwoID = "7f7436c5-af65-4533-b4cf-13496a71fb7e"
 
+// captureFnT emulates a child process with full stdout/stderr/exit-code
+// control (used by RunCapture in tests).
+type captureFnT func(exe string, args []string) (stdout, stderr string, exit int)
+
 // fakeRunner records calls and answers from fn (or defaultOut).
 type fakeRunner struct {
 	mu         sync.Mutex
@@ -70,10 +74,26 @@ type fakeRunner struct {
 	lastExe    string
 	lastArgs   []string
 	lastCtx    context.Context
+	lastIn     string
 	fn         func(exe string, args []string) (string, error)
+	captureFn  captureFnT
 	defaultOut string
 	defErr     error
 	delay      time.Duration
+	startFn    func(ctx context.Context, exe string, args []string) (Process, error)
+}
+
+// Start implements StreamRunner: records the call and answers from startFn.
+func (f *fakeRunner) Start(ctx context.Context, exe string, args ...string) (Process, error) {
+	f.mu.Lock()
+	f.calls++
+	f.lastExe = exe
+	f.lastArgs = append([]string(nil), args...)
+	f.mu.Unlock()
+	if f.startFn == nil {
+		return nil, errors.New("fakeRunner: no startFn")
+	}
+	return f.startFn(ctx, exe, args)
 }
 
 func (f *fakeRunner) Run(ctx context.Context, exe string, args ...string) (string, error) {
@@ -95,6 +115,54 @@ func (f *fakeRunner) Run(ctx context.Context, exe string, args ...string) (strin
 		return f.fn(exe, args)
 	}
 	return f.defaultOut, f.defErr
+}
+
+// RunCapture answers from captureFn when set; otherwise it degrades to
+// fn/defaultOut with exit code 0 (or -1 plus the error when the fn fails).
+func (f *fakeRunner) RunCapture(ctx context.Context, exe string, args ...string) (string, string, int, error) {
+	f.mu.Lock()
+	f.calls++
+	f.lastExe = exe
+	f.lastArgs = append([]string(nil), args...)
+	f.lastCtx = ctx
+	f.mu.Unlock()
+
+	if f.delay > 0 {
+		select {
+		case <-time.After(f.delay):
+		case <-ctx.Done():
+			return "", "", -1, ctx.Err()
+		}
+	}
+	if f.captureFn != nil {
+		out, errText, exit := f.captureFn(exe, args)
+		return out, errText, exit, nil
+	}
+	if f.fn != nil {
+		out, err := f.fn(exe, args)
+		if err != nil {
+			return "", err.Error(), -1, err
+		}
+		return out, "", 0, nil
+	}
+	if f.defErr != nil {
+		return "", f.defErr.Error(), -1, f.defErr
+	}
+	return f.defaultOut, "", 0, nil
+}
+
+// RunStdin answers like RunCapture and records the stdin payload.
+func (f *fakeRunner) RunStdin(ctx context.Context, exe, stdin string, args ...string) (string, string, int, error) {
+	f.mu.Lock()
+	f.lastIn = stdin
+	f.mu.Unlock()
+	return f.RunCapture(ctx, exe, args...)
+}
+
+func (f *fakeRunner) lastStdin() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.lastIn
 }
 
 func (f *fakeRunner) callCount() int {

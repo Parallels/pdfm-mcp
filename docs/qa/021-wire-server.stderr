@@ -1,0 +1,21 @@
+time=2026-10-09T16:32:33.617+01:00 level=INFO msg=starting version=2cef909-dirty commit=2cef909
+time=2026-10-09T16:32:33.619+01:00 level=INFO msg="parallels module enabled" prlctl=/usr/local/bin/prlctl prlsrvctl=/usr/local/bin/prlsrvctl vm_id="" cache_ttl=30s
+time=2026-10-09T16:32:33.619+01:00 level=INFO msg="OCR helper not available; parallels_vm_observe not registered" reason="ocr helper unavailable: pdfm-ocr not found next to the server binary or on PATH (set PDFM_MCP_OCR_HELPER)"
+time=2026-10-09T16:32:34.274+01:00 level=INFO msg="server run start"
+time=2026-10-09T16:32:34.274+01:00 level=INFO msg="server connecting"
+time=2026-10-09T16:32:34.274+01:00 level=INFO msg="server session connected" session_id=""
+time=2026-10-09T16:32:34.289+01:00 level=INFO msg="session initialized"
+time=2026-10-09T16:32:35.189+01:00 level=INFO msg="prlctl snapshot completed" vm=empty_catalog_test snapshot_id={8f8f7287-9e73-4a05-9959-be2ea1202ce5}
+time=2026-10-09T16:32:35.550+01:00 level=INFO msg="prlctl snapshot completed" vm=empty_catalog_test snapshot_id={6a439e6d-624a-4d9b-8437-364947b80cff}
+time=2026-10-09T16:32:37.353+01:00 level=INFO msg="prlctl snapshot-switch completed" vm=empty_catalog_test snapshot_id={8f8f7287-9e73-4a05-9959-be2ea1202ce5}
+time=2026-10-09T16:32:38.441+01:00 level=INFO msg="prlctl snapshot-delete completed" vm=empty_catalog_test snapshot_id={6a439e6d-624a-4d9b-8437-364947b80cff}
+time=2026-10-09T16:32:38.839+01:00 level=INFO msg="prlctl snapshot-delete completed" vm=empty_catalog_test snapshot_id={8f8f7287-9e73-4a05-9959-be2ea1202ce5}
+time=2026-10-09T16:32:39.841+01:00 level=WARN msg="prlctl snapshot-delete failed" vm=empty_catalog_test snapshot_id={00000000-0000-0000-0000-000000000000} err="prlctl snapshot-delete failed: Failed to delete snapshot: Unable to open the snapshot configuration file."
+time=2026-10-09T16:32:40.293+01:00 level=INFO msg="prlctl encrypt completed" vm=empty_catalog_test dry_run=false
+time=2026-10-09T16:32:40.834+01:00 level=WARN msg="prlctl snapshot-list failed" vm=empty_catalog_test err="prlctl snapshot-list failed: Failed to authorise current session against virtual machine. Error: The password you specified is invalid. Please check the password you typed for \"empty_catalog_test\" and try again."
+time=2026-10-09T16:32:41.741+01:00 level=INFO msg="prlctl snapshot completed" vm=empty_catalog_test snapshot_id={eb89a1c8-a327-4ee4-8bcf-a741b7b2ec7b}
+time=2026-10-09T16:32:42.144+01:00 level=INFO msg="prlctl snapshot-delete completed" vm=empty_catalog_test snapshot_id={eb89a1c8-a327-4ee4-8bcf-a741b7b2ec7b}
+time=2026-10-09T16:32:42.958+01:00 level=INFO msg="prlctl decrypt completed" vm=empty_catalog_test dry_run=false
+time=2026-10-09T16:32:43.258+01:00 level=INFO msg="server session disconnected" session_id=""
+time=2026-10-09T16:32:43.258+01:00 level=INFO msg="server session ended"
+time=2026-10-09T16:32:43.258+01:00 level=INFO msg="server stopped"

@@ -17,7 +17,7 @@ type ListVmsInput struct {
 
 // ListVmsOutput is the structured result of the parallels_list_vms tool.
 type ListVmsOutput struct {
-	Vms       []models.VM `json:"vms" jsonschema:"the virtual machines with full prlctl detail; only the target VM in VM mode"`
+	Vms       []models.VM `json:"vms" jsonschema:"the virtual machines with full prlctl detail; only the target VM in VM mode; restricted to --allow-vms when set"`
 	Count     int         `json:"count" jsonschema:"number of VMs in the list"`
 	FetchedAt string      `json:"fetched_at" jsonschema:"RFC3339 timestamp of the last cache refresh"`
 	Source    string      `json:"source" jsonschema:"cache when served from memory, refreshed when prlctl was re-run for this call"`
@@ -32,6 +32,10 @@ func ListVms(ctx context.Context, _ *mcp.CallToolRequest, in ListVmsInput) (*mcp
 	}
 
 	vms := res.VMs
+	if a := vmAllowList(); a != nil {
+		// --allow-vms: disallowed VMs never leave the server.
+		vms = a.Filter(vms)
+	}
 	if vms == nil {
 		vms = make([]models.VM, 0)
 	}

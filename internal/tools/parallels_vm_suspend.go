@@ -17,7 +17,7 @@ func VMSuspend(ctx context.Context, _ *mcp.CallToolRequest, in PowerVMInput) (*m
 func RegisterParallelsVMSuspend(s *mcp.Server, mode PowerMode) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:         "parallels_vm_suspend",
-		Description:  powerDescription("Suspends a running VM, keeping its state on disk (prlctl suspend).", mode),
+		Description:  powerDescription(descVMSuspend, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false},
 		InputSchema:  powerInputSchema[PowerVMInput](mode),
 		OutputSchema: outputSchemaFor[PowerOutput]("parallels_vm_suspend"),

@@ -1,0 +1,128 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+#
+# Release configuration (spec 013, with the Homebrew cask from spec 014).
+# Validate with `make release-check`; dry run with `make release-snapshot`.
+#
+# OPEN DECISION (spec 013 section 2): the Go module is
+# github.com/cjlapao/pdfm-mcp while the remote is Parallels/pdfm-mcp.
+# If the module is renamed, change the three -X ldflags paths below and the
+# MODULE variable in the Makefile together.
+version: 2
+project_name: pdfm-mcp
+
+before:
+  hooks:
+    - go mod tidy
+    - go mod verify
+
+# Builds run on a macOS runner: OCR is Apple Vision compiled in via cgo
+# (spec 022), so there is no cross-compile path. goreleaser on macOS builds
+# arm64 and amd64 natively (same-OS cgo cross for the other arch).
+builds:
+  - id: pdfm-mcp
+    main: ./cmd/pdfm-mcp
+    binary: pdfm-mcp
+    env: [CGO_ENABLED=1]
+    goos: [darwin]
+    goarch: [arm64, amd64]
+    flags: [-trimpath]
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags:
+      - -s -w
+      - -X github.com/cjlapao/pdfm-mcp/internal/version.Version={{ .Version }}
+      - -X github.com/cjlapao/pdfm-mcp/internal/version.Commit={{ .ShortCommit }}
+      - -X github.com/cjlapao/pdfm-mcp/internal/version.Date={{ .Date }}
+
+universal_binaries:
+  - ids: [pdfm-mcp]
+    replace: true          # only the merged binary is archived and notarized
+    name_template: pdfm-mcp
+
+notarize:
+  macos:
+    # Unsigned snapshot/fork builds succeed when the secrets are absent.
+    # NOTE: if the workflow exports an unset secret as an empty string,
+    # verify that isEnvSet treats it as set; release.yml deliberately fails
+    # the signature check in the mcpb job for stable tags either way.
+    - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
+      ids: [pdfm-mcp]
+      sign:
+        certificate: "{{ .Env.MACOS_SIGN_P12 }}"
+        password: "{{ .Env.MACOS_SIGN_PASSWORD }}"
+      notarize:
+        issuer_id: "{{ .Env.MACOS_NOTARY_ISSUER_ID }}"
+        key_id: "{{ .Env.MACOS_NOTARY_KEY_ID }}"
+        key: "{{ .Env.MACOS_NOTARY_KEY }}"
+        wait: true
+        timeout: 20m       # documented maximum
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    name_template: "pdfm-mcp_{{ .Version }}_darwin_universal"
+    files:
+      - README.md
+      # LICENSE does not exist yet (Legal decides, spec 013 section 3). The
+      # glob below matches nothing until it does, so builds work without it.
+      # Verify with `goreleaser check` / a snapshot that an empty glob is
+      # tolerated by the installed version; otherwise delete this line.
+      - "LICEN[CS]E*"
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+sboms:
+  - artifacts: archive     # needs `syft` on PATH (release.yml installs it)
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude: ["^docs:", "^test:", "^chore:", "^ci:", "^Merge "]
+
+release:
+  github:
+    owner: Parallels          # confirm; GoReleaser can infer from the remote
+    name: pdfm-mcp
+  prerelease: auto                 # v1.2.3-rc.1 => GitHub pre-release
+  draft: false
+  name_template: "pdfm-mcp {{ .Version }}"
+
+# ---------------------------------------------------------------------------
+# Homebrew cask (spec 014 section 4). Verified against GoReleaser 2.12.5:
+# the key for a binary cask is `binary` (singular), not `binaries`.
+#
+# GENERATION ONLY: GoReleaser writes dist/homebrew/Casks/pdfm-mcp.rb and
+# never pushes (skip_upload: true). The `tap` job in release.yml normalizes
+# the file with `brew style --fix` (GoReleaser's template emits Homebrew
+# stanza order that `brew style` rejects), runs `brew audit --cask --strict`,
+# and commits it to the tap repo. Publishing stays gated on the
+# PUBLISH_HOMEBREW variable + stable tag in that job.
+#
+# `license` is a placeholder: GoReleaser only renders the stanza for a
+# known SPDX id, so it is omitted from the cask until Legal decides.
+# ---------------------------------------------------------------------------
+homebrew_casks:
+  - name: pdfm-mcp
+    ids: [default]
+    directory: Casks
+    homepage: "https://github.com/Parallels/pdfm-mcp"   # confirm
+    description: "MCP server for controlling Parallels Desktop virtual machines"
+    license: "<SPDX id or 'Proprietary' as decided by Legal>"
+    binary: pdfm-mcp
+    skip_upload: true
+    # Required for the pipe to generate the cask at all, but unused with
+    # skip_upload: true (the `tap` job in release.yml owns publishing).
+    repository:
+      owner: Parallels          # confirm
+      name: homebrew-tap             # confirm
+      branch: main
+    # Single line on purpose, and short: GoReleaser emits each caveat line as
+    # a bare string literal inside `caveats do ... end` and Homebrew only
+    # uses the block's last expression — multi-line caveats silently drop all
+    # but the last line. `brew style` caps cask lines at 118 characters.
+    caveats: "GUI MCP clients ignore your shell PATH; point their config at #{HOMEBREW_PREFIX}/bin/pdfm-mcp"
+
+snapshot:
+  version_template: "{{ .Version }}-snapshot"

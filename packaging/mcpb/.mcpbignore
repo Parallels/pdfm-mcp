@@ -1,0 +1,13 @@
+# Defence in depth (spec 015 section 5). build-mcpb.sh already stages ONLY the
+# files below in a fresh directory; this allow-list guarantees nothing else
+# (build artifacts, .env files, keys) is ever packed even if staging changes.
+# NOTE: `!server` must not have a trailing slash — the mcpb CLI's ignore
+# checker tests directory entries as bare paths, and a trailing-slash pattern
+# matches no entry, so the whole subtree (including the binary) is skipped.
+*
+!manifest.json
+!icon.png
+!README.md
+!LICENSE
+!server
+!server/pdfm-mcp

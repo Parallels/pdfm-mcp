@@ -3,8 +3,10 @@ package service
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -27,6 +29,15 @@ type CommandRunner interface {
 	// and returns its stdout. The returned error carries the child's stderr
 	// when the command fails.
 	Run(ctx context.Context, exe string, args ...string) (string, error)
+
+	// RunCapture is like Run but also reports stderr and the child's exit
+	// code, and preserves stdout when the child exits non-zero. err is
+	// non-nil only for launch failures and context expiry — a non-zero exit
+	// code is NOT an error here.
+	RunCapture(ctx context.Context, exe string, args ...string) (stdout, stderr string, exitCode int, err error)
+
+	// RunStdin is like RunCapture but also feeds stdin to the child.
+	RunStdin(ctx context.Context, exe, stdin string, args ...string) (stdout, stderr string, exitCode int, err error)
 }
 
 // realRunner is the production CommandRunner.
@@ -62,6 +73,83 @@ func (realRunner) Run(ctx context.Context, exe string, args ...string) (string, 
 		return "", fmt.Errorf("output from %s %s exceeds %d bytes", exe, joinArgs(args), maxOutputBytes)
 	}
 	return stdout.String(), nil
+}
+
+// RunCapture implements CommandRunner. It shares Run's deadline policy
+// (caller deadline authoritative, else the default cap) but keeps the
+// child's stdout and stderr and reports its exit code instead of folding a
+// non-zero exit into an error.
+func (realRunner) RunCapture(ctx context.Context, exe string, args ...string) (string, string, int, error) {
+	runCtx, cancel := ctx, func() {}
+	if _, ok := ctx.Deadline(); !ok {
+		runCtx, cancel = context.WithTimeout(ctx, defaultCommandTimeout)
+	}
+	defer cancel()
+
+	cmd := exec.CommandContext(runCtx, exe, args...) // #nosec G204 -- exe comes from our own detection step, args are fixed flags plus validated identifiers and a bounded command
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		if cerr := runCtx.Err(); cerr != nil {
+			// Go reports a context kill as a plain "signal: killed" exit
+			// error, so the context itself is the source of truth.
+			return "", "", -1, fmt.Errorf("%s %s: %v (command timed out)", exe, joinArgs(args), cerr)
+		}
+		var ee *exec.ExitError
+		if !errors.As(err, &ee) {
+			// Launch failure (missing binary, permission, ...).
+			return "", "", -1, mapRunError(exe, args, err, &stderr)
+		}
+		// A non-zero guest/host exit is a result, not an error.
+		if stdout.Len() > maxOutputBytes || stderr.Len() > maxOutputBytes {
+			return "", "", -1, fmt.Errorf("output from %s %s exceeds %d bytes", exe, joinArgs(args), maxOutputBytes)
+		}
+		return stdout.String(), stderr.String(), ee.ExitCode(), nil
+	}
+	if stdout.Len() > maxOutputBytes || stderr.Len() > maxOutputBytes {
+		return "", "", -1, fmt.Errorf("output from %s %s exceeds %d bytes", exe, joinArgs(args), maxOutputBytes)
+	}
+	return stdout.String(), stderr.String(), 0, nil
+}
+
+// RunStdin implements CommandRunner. It shares RunCapture's deadline policy
+// and stream caps, and additionally feeds stdin to the child (the caller is
+// responsible for bounding it).
+func (realRunner) RunStdin(ctx context.Context, exe, stdin string, args ...string) (string, string, int, error) {
+	runCtx, cancel := ctx, func() {}
+	if _, ok := ctx.Deadline(); !ok {
+		runCtx, cancel = context.WithTimeout(ctx, defaultCommandTimeout)
+	}
+	defer cancel()
+
+	cmd := exec.CommandContext(runCtx, exe, args...) // #nosec G204 -- exe comes from our own detection step, args are fixed flags plus validated identifiers; stdin is validated JSON built by the service
+	var stdout, stderr bytes.Buffer
+	cmd.Stdin = strings.NewReader(stdin)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		if cerr := runCtx.Err(); cerr != nil {
+			// Go reports a context kill as a plain "signal: killed" exit
+			// error, so the context itself is the source of truth.
+			return "", "", -1, fmt.Errorf("%s %s: %v (command timed out)", exe, joinArgs(args), cerr)
+		}
+		var ee *exec.ExitError
+		if !errors.As(err, &ee) {
+			// Launch failure (missing binary, permission, ...).
+			return "", "", -1, mapRunError(exe, args, err, &stderr)
+		}
+		if stdout.Len() > maxOutputBytes || stderr.Len() > maxOutputBytes {
+			return "", "", -1, fmt.Errorf("output from %s %s exceeds %d bytes", exe, joinArgs(args), maxOutputBytes)
+		}
+		return stdout.String(), stderr.String(), ee.ExitCode(), nil
+	}
+	if stdout.Len() > maxOutputBytes || stderr.Len() > maxOutputBytes {
+		return "", "", -1, fmt.Errorf("output from %s %s exceeds %d bytes", exe, joinArgs(args), maxOutputBytes)
+	}
+	return stdout.String(), stderr.String(), 0, nil
 }
 
 func mapRunError(exe string, args []string, err error, stderr *bytes.Buffer) error {

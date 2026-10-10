@@ -1,0 +1,35 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "@NAME@",
+  "title": "Parallels Desktop VMs",
+  "description": "Control Parallels Desktop VMs from MCP: power, screenshot, exec, keyboard, sequences. macOS only.",
+  "version": "@VERSION@",
+  "repository": {
+    "url": "https://github.com/Parallels/pdfm-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/Parallels/pdfm-mcp/releases/download/v@VERSION@/pdfm-mcp-@VERSION@.mcpb",
+      "fileSha256": "@SHA256@",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "PDFM_MCP_VM_ID",
+          "description": "Optional VM id or name to restrict the server to a single VM (empty = all VMs)",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "PDFM_MCP_LOG_LEVEL",
+          "description": "debug, info, warn or error (default info)",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}

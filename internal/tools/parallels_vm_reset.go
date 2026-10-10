@@ -17,7 +17,7 @@ func VMReset(ctx context.Context, _ *mcp.CallToolRequest, in PowerVMInput) (*mcp
 func RegisterParallelsVMReset(s *mcp.Server, mode PowerMode) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "parallels_vm_reset",
-		Description: powerDescription("Performs a hard shutdown of the VM and starts it again (prlctl reset).", mode),
+		Description: powerDescription(descVMReset, mode),
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint:    false,
 			DestructiveHint: truePtr(),

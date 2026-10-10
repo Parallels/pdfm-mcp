@@ -19,6 +19,42 @@ type Option = service.Option
 // CommandRunner executes a Parallels CLI binary (tests inject a fake).
 type CommandRunner = service.CommandRunner
 
+// StreamRunner is the optional streaming seam of a CommandRunner (async
+// exec jobs); tests inject fakes that implement it.
+type StreamRunner = service.StreamRunner
+
+// Process is a streaming child process started by a StreamRunner.
+type Process = service.Process
+
+// OutputBuffer is the thread-safe bounded output sink of a Process.
+type OutputBuffer = service.OutputBuffer
+
+// NewOutputBuffer returns an OutputBuffer retaining at most limit bytes.
+func NewOutputBuffer(limit int) *OutputBuffer { return service.NewOutputBuffer(limit) }
+
+// ExecOptions is the exec option type.
+type ExecOptions = interfaces.ExecOptions
+
+// ExecJobInfo is the outcome of StartExecJob.
+type ExecJobInfo = interfaces.ExecJobInfo
+
+// ExecJobQuery selects what an ExecJobResult call returns.
+type ExecJobQuery = interfaces.ExecJobQuery
+
+// ExecJobStatus is the async exec job status with stream offsets.
+type ExecJobStatus = interfaces.ExecJobStatus
+
+// Async job limits, re-exported for argument validation.
+const (
+	DefaultJobTimeout = service.DefaultJobTimeout
+	MaxJobTimeout     = service.MaxJobTimeout
+	MaxJobWait        = service.MaxJobWait
+	MaxJobReadBytes   = service.MaxJobReadBytes
+)
+
+// Shutdown kills all running async exec jobs (call on server exit).
+func Shutdown() { service.Shutdown() }
+
 // PowerOp identifies a prlctl power subcommand (start, stop, …).
 type PowerOp = interfaces.PowerOp
 

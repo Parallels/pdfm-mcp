@@ -1,0 +1,333 @@
+# Release pipeline (specs 013/023) + stable distribution (specs 014–016).
+# Action majors follow ci.yml; re-check for newer majors/SHAs when editing.
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Release channel
+        required: true
+        type: choice
+        default: canary
+        options: [canary, beta, production]
+  workflow_call:
+    inputs:
+      environment:
+        description: canary, beta or production
+        required: true
+        type: string
+    secrets:
+      MACOS_SIGN_P12:
+        required: true
+      MACOS_SIGN_PASSWORD:
+        required: true
+      MACOS_NOTARY_KEY:
+        required: true
+      MACOS_NOTARY_KEY_ID:
+        required: true
+      MACOS_NOTARY_ISSUER_ID:
+        required: true
+      HOMEBREW_TAP_TOKEN:
+        required: false
+    outputs:
+      release_tag:
+        value: ${{ jobs.prepare.outputs.release_tag }}
+      release_version:
+        value: ${{ jobs.prepare.outputs.release_version }}
+      release_channel:
+        value: ${{ jobs.prepare.outputs.release_channel }}
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-pdfm-mcp
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.version.outputs.release_version }}
+      release_tag: ${{ steps.version.outputs.release_tag }}
+      release_channel: ${{ steps.version.outputs.release_channel }}
+      base_version: ${{ steps.version.outputs.base_version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+      should_build: ${{ steps.exists.outputs.should_build }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Resolve release version
+        id: version
+        env:
+          RELEASE_ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            python3 -B scripts/version.py resolve --tag "$GITHUB_REF_NAME"
+          else
+            [[ "$GITHUB_REF" == refs/heads/main ]] || { echo 'Release must run from main' >&2; exit 1; }
+            python3 -B scripts/version.py resolve --environment "$RELEASE_ENVIRONMENT" --run-number "$GITHUB_RUN_NUMBER"
+          fi
+      - name: Validate release commit and version
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.release_tag }}
+        run: ./scripts/version-check.sh "$RELEASE_TAG"
+      - name: Check existing releases
+        id: exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          # API/authentication errors fail the job; they do not mean absence.
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+            --jq '.[].tag_name' > "$RUNNER_TEMP/release-tags"
+          if grep -Fxq "$RELEASE_TAG" "$RUNNER_TEMP/release-tags"; then
+            echo 'should_build=false' >> "$GITHUB_OUTPUT"
+            echo "Release $RELEASE_TAG already exists; re-run failed downstream jobs to recover." >&2
+          else
+            echo 'should_build=true' >> "$GITHUB_OUTPUT"
+          fi
+
+  # macOS runners throughout: OCR is Apple Vision compiled in via cgo
+  # (spec 022), so the Go build has no non-darwin path.
+  verify:
+    needs: prepare
+    if: needs.prepare.outputs.should_build == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0, ref: "${{ github.sha }}" }
+      - uses: actions/setup-go@v7
+        with: { go-version-file: go.mod }
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+        run: ./scripts/version-check.sh "$RELEASE_TAG"
+      - name: Require reviewed production notes
+        if: needs.prepare.outputs.prerelease == 'false'
+        env:
+          BASE_VERSION: ${{ needs.prepare.outputs.base_version }}
+        run: python3 -B scripts/changelog.py notes --version "$BASE_VERSION" --output "$RUNNER_TEMP/release-notes.md"
+      - name: Require production bundle metadata
+        if: needs.prepare.outputs.prerelease == 'false'
+        run: |
+          # Fail before publishing the binary if the stable bundle cannot ship.
+          jq -e '[.. | strings | select(test("<[^>]+>"))] | length == 0' \
+            packaging/mcpb/manifest.json.tmpl >/dev/null || { echo 'Resolve MCPB manifest placeholders before production' >&2; exit 1; }
+      - run: make fmt-check vet test
+      - run: make test-e2e
+      - run: make test-scripts
+
+  goreleaser:
+    needs: [prepare, verify]
+    runs-on: macos-latest           # cgo build of the universal binary
+    environment: release            # protected environment: required reviewers + holds the secrets
+    permissions:
+      contents: write               # create the release
+      id-token: write               # attestations / OIDC
+      attestations: write
+    outputs:
+      version: ${{ needs.prepare.outputs.release_version }}
+      prerelease: ${{ needs.prepare.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0, ref: "${{ github.sha }}" }
+      - uses: actions/setup-go@v7
+        with: { go-version-file: go.mod }
+      - name: Check signing credentials
+        env:
+          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
+          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
+          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+        run: |
+          for name in MACOS_SIGN_P12 MACOS_SIGN_PASSWORD MACOS_NOTARY_KEY MACOS_NOTARY_KEY_ID MACOS_NOTARY_ISSUER_ID; do
+            [[ -n "${!name}" ]] || { echo "Missing signing secret: $name" >&2; exit 1; }
+          done
+      - name: Prepare release notes
+        id: notes
+        env:
+          BASE_VERSION: ${{ needs.prepare.outputs.base_version }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+        run: |
+          args='release --clean'
+          if python3 -B scripts/changelog.py notes --version "$BASE_VERSION" --output "$RUNNER_TEMP/release-notes.md"; then
+            args="$args --release-notes $RUNNER_TEMP/release-notes.md"
+          elif [[ "$PRERELEASE" == false ]]; then
+            exit 1
+          fi
+          echo "args=$args" >> "$GITHUB_OUTPUT"
+      - name: Create immutable release tag
+        env:
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          # A GITHUB_TOKEN push does not start another tag-triggered run.
+          git fetch --tags origin
+          ./scripts/version-check.sh "$RELEASE_TAG"
+          if ! git rev-parse -q --verify "refs/tags/${RELEASE_TAG}" >/dev/null; then
+            git -c user.name='github-actions[bot]' -c user.email='github-actions[bot]@users.noreply.github.com' \
+              -c tag.gpgsign=false tag -a "$RELEASE_TAG" -m "pdfm-mcp ${RELEASE_TAG}"
+          fi
+          git push origin "refs/tags/${RELEASE_TAG}"
+      - uses: anchore/sbom-action/download-syft@v0   # syft for `sboms`; verify the latest major
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: "~> v2"
+          args: ${{ steps.notes.outputs.args }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GORELEASER_CURRENT_TAG: ${{ needs.prepare.outputs.release_tag }}
+          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
+          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
+          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+      # Provenance is optional (spec 013 section 2): never block the release.
+      - uses: actions/attest-build-provenance@v3                  # verify the latest major
+        continue-on-error: true
+        with:
+          subject-path: dist/*.tar.gz
+      # The cask is generated here and published by the `tap` job (spec 014):
+      # GoReleaser's template fails `brew style`, so it must be normalized
+      # and audited before it is committed to the tap.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: homebrew-cask
+          path: dist/homebrew/Casks/pdfm-mcp.rb
+
+  mcpb:
+    needs: goreleaser
+    if: needs.goreleaser.outputs.prerelease == 'false'
+    runs-on: macos-latest          # needs codesign for the integrity check; also the signature gate
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.goreleaser.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with: { ref: "${{ github.sha }}" }
+      - name: Download release archive and checksums
+        env: { GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
+        run: |
+          gh release download "v${VERSION}" -p "pdfm-mcp_${VERSION}_darwin_universal.tar.gz" -p checksums.txt
+          shasum -a 256 -c checksums.txt --ignore-missing
+          tar xzf "pdfm-mcp_${VERSION}_darwin_universal.tar.gz" pdfm-mcp
+          # Fails the workflow when a stable release is unsigned. If this fails
+          # AFTER the release was created, delete the release (docs/release.md).
+          codesign --verify --strict --verbose=2 ./pdfm-mcp
+      - uses: actions/setup-node@v5
+        with: { node-version: "lts/*" }
+      - name: Build bundle
+        env: { MCPB_STRICT: "1" }
+        run: ./scripts/build-mcpb.sh "${VERSION}" ./pdfm-mcp dist
+      - name: Attach to release
+        env: { GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
+        run: gh release upload "v${VERSION}" "dist/pdfm-mcp-${VERSION}.mcpb" "dist/pdfm-mcp-${VERSION}.mcpb.sha256"
+
+  # Homebrew tap update (spec 014): stable tags only, gated by the
+  # PUBLISH_HOMEBREW repository variable. GoReleaser only generated the cask
+  # (skip_upload: true); this job normalizes it (GoReleaser's template fails
+  # `brew style`), audits it, and commits it to the tap repo. If it fails
+  # AFTER the GitHub Release exists, re-run this job alone (docs/release.md).
+  tap:
+    needs: goreleaser
+    if: needs.goreleaser.outputs.prerelease == 'false' && vars.PUBLISH_HOMEBREW == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+    env:
+      TAP_REPO: "Parallels/homebrew-tap"   # confirm; repo name must keep the homebrew- prefix
+      VERSION: ${{ needs.goreleaser.outputs.version }}
+      BOT_EMAIL: "<bot-email>"                  # an org-owned address, not a personal one
+    steps:
+      - uses: actions/download-artifact@v7
+        with: { name: homebrew-cask }
+      - name: Normalise, audit and publish the cask
+        env: { HOMEBREW_TAP_TOKEN: "${{ secrets.HOMEBREW_TAP_TOKEN }}" }
+        run: |
+          set -euo pipefail
+          export HOMEBREW_NO_AUTO_UPDATE=1
+          [[ -n ${HOMEBREW_TAP_TOKEN:-} ]] || { echo "HOMEBREW_TAP_TOKEN is not set in the release environment" >&2; exit 1; }
+          owner=${TAP_REPO%%/*}; repo=${TAP_REPO##*/}
+          tapname="${owner}/${repo#homebrew-}"   # brew strips the homebrew- prefix from tap names
+          TAPS="$(brew --repository)/Library/Taps"
+          mkdir -p "$TAPS/$owner"
+          # Token via request header, never in the URL (keeps it out of git errors/logs).
+          git -c "http.https://github.com/.extraHeader=Authorization: token ${HOMEBREW_TAP_TOKEN}" clone -q "https://github.com/${TAP_REPO}" "$TAPS/$owner/$repo"
+          brew trust "$tapname"
+          cp pdfm-mcp.rb "$TAPS/$owner/$repo/Casks/"
+          cask="$TAPS/$owner/$repo/Casks/pdfm-mcp.rb"
+          brew style --fix "$cask"
+          brew style "$cask"                    # must be clean after --fix
+          brew audit --cask --strict "${tapname}/pdfm-mcp"
+          branch=$(git -C "$TAPS/$owner/$repo" symbolic-ref --short HEAD)
+          git -C "$TAPS/$owner/$repo" add Casks/pdfm-mcp.rb
+          git -C "$TAPS/$owner/$repo" -c commit.gpgsign=false -c user.name="pdfm-mcp release bot" -c user.email="${BOT_EMAIL}" \
+            commit -m "pdfm-mcp v${VERSION}"
+          git -C "$TAPS/$owner/$repo" -c "http.https://github.com/.extraHeader=Authorization: token ${HOMEBREW_TAP_TOKEN}" \
+            push origin "HEAD:${branch}"
+
+  # Public listing: only behind the publication gate (spec 013 section 3).
+  registry:
+    needs: [goreleaser, mcpb]
+    if: needs.goreleaser.outputs.prerelease == 'false' && vars.PUBLISH_PUBLIC == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write            # OIDC option only
+    env:
+      VERSION: ${{ needs.goreleaser.outputs.version }}
+      MCP_SERVER_NAME: ${{ vars.MCP_SERVER_NAME }}
+      # Pin BOTH before the first publish (docs/release.md, Open items). Never "latest".
+      # Verified candidate (2026-10-09): v1.8.1, linux amd64 sha256
+      # a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc per the
+      # official registry_1.8.1_checksums.txt — a human must review it and paste
+      # the values here before the first publish.
+      MCP_PUBLISHER_VERSION: "<pinned mcp-publisher version>"
+      MCP_PUBLISHER_SHA256: "<sha256 of the linux amd64 tarball, reviewed by a human>"
+    steps:
+      - uses: actions/checkout@v7
+        with: { ref: "${{ github.sha }}" }
+      - name: Get the bundle hash
+        env: { GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
+        run: gh release download "v${VERSION}" -p "pdfm-mcp-${VERSION}.mcpb.sha256"
+      - name: Render server.json
+        run: ./scripts/render-server-json.sh "${MCP_SERVER_NAME}" "${VERSION}" "pdfm-mcp-${VERSION}.mcpb.sha256" server.json
+      - name: Install mcp-publisher (pinned release + checksum)
+        run: |
+          case "$MCP_PUBLISHER_VERSION$MCP_PUBLISHER_SHA256" in *"<"*) echo "mcp-publisher pin/checksum not set" >&2; exit 1;; esac
+          # Verified against v1.8.1: asset names carry NO version segment.
+          f="mcp-publisher_linux_amd64.tar.gz"
+          curl -fsSL -o "$f" "https://github.com/modelcontextprotocol/registry/releases/download/v${MCP_PUBLISHER_VERSION}/${f}"
+          echo "${MCP_PUBLISHER_SHA256}  ${f}" | sha256sum -c -
+          tar xzf "$f" mcp-publisher
+      - name: Authenticate
+        run: ./mcp-publisher login github-oidc      # DNS option: login dns --domain ... --private-key "$MCP_PRIVATE_KEY"
+      - name: Publish
+        run: ./mcp-publisher publish
+
+  skip:
+    needs: prepare
+    if: needs.prepare.outputs.should_build != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Existing release
+        env:
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+        run: echo "Release $RELEASE_TAG already exists; published versions are retained." >&2

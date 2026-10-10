@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -54,23 +55,71 @@ const toolSampleVMsJSON = `[
 
 // testRunner is a fake CommandRunner that records calls.
 type testRunner struct {
-	mu       sync.Mutex
-	calls    int
-	lastExe  string
-	lastArgs []string
-	fn       func(exe string, args []string) (string, error)
+	mu        sync.Mutex
+	calls     int
+	lastExe   string
+	lastArgs  []string
+	lastIn    string
+	fn        func(exe string, args []string) (string, error)
+	captureFn func(exe string, args []string) (stdout, stderr string, exit int)
+	startFn   func(ctx context.Context, exe string, args []string) (parallels.Process, error)
 }
 
-func (f *testRunner) Run(_ context.Context, exe string, args ...string) (string, error) {
+// Start implements parallels.StreamRunner (async exec jobs).
+func (f *testRunner) Start(ctx context.Context, exe string, args ...string) (parallels.Process, error) {
+	f.record(exe, args)
+	if f.startFn == nil {
+		return nil, errors.New("testRunner: no startFn")
+	}
+	return f.startFn(ctx, exe, args)
+}
+
+func (f *testRunner) record(exe string, args []string) {
 	f.mu.Lock()
 	f.calls++
 	f.lastExe = exe
 	f.lastArgs = append([]string(nil), args...)
 	f.mu.Unlock()
+}
+
+func (f *testRunner) Run(_ context.Context, exe string, args ...string) (string, error) {
+	f.record(exe, args)
 	if f.fn != nil {
 		return f.fn(exe, args)
 	}
 	return toolSampleVMsJSON, nil
+}
+
+// RunCapture answers from captureFn when set, else degrades to fn
+// (success → exit 0, failure → exit -1 plus the error).
+func (f *testRunner) RunCapture(_ context.Context, exe string, args ...string) (string, string, int, error) {
+	f.record(exe, args)
+	if f.captureFn != nil {
+		out, errText, exit := f.captureFn(exe, args)
+		return out, errText, exit, nil
+	}
+	if f.fn != nil {
+		out, err := f.fn(exe, args)
+		if err != nil {
+			return "", err.Error(), -1, err
+		}
+		return out, "", 0, nil
+	}
+	return toolSampleVMsJSON, "", 0, nil
+}
+
+// RunStdin answers like RunCapture and records the stdin payload.
+func (f *testRunner) RunStdin(_ context.Context, exe, stdin string, args ...string) (string, string, int, error) {
+	f.mu.Lock()
+	f.lastIn = stdin
+	f.mu.Unlock()
+	return f.RunCapture(context.Background(), exe, args...)
+}
+
+func (f *testRunner) lastStdin() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.lastIn
 }
 
 func (f *testRunner) count() int {
@@ -225,6 +274,70 @@ func nullArrayUnionPaths(node any, path string) []string {
 	return out
 }
 
+// multiTypePaths walks a wire schema (map[string]any tree as seen by MCP
+// clients) and returns the paths of every node whose "type" is an array of
+// types. Single-type dialects (e.g. the OpenAPI subset used for Gemini
+// function declarations) may reject such nodes or drop the constraint, so
+// registered tool schemas must not contain them: pointer fields are split
+// into single-type anyOf branches instead (splitNullableUnions).
+func multiTypePaths(node any, path string) []string {
+	var out []string
+	switch v := node.(type) {
+	case map[string]any:
+		if t, ok := v["type"]; ok {
+			if _, ok := t.([]any); ok {
+				out = append(out, path)
+			}
+		}
+		for k, val := range v {
+			out = append(out, multiTypePaths(val, path+"."+k)...)
+		}
+	case []any:
+		for i, item := range v {
+			out = append(out, multiTypePaths(item, fmt.Sprintf("%s[%d]", path, i))...)
+		}
+	}
+	return out
+}
+
+// wireMetadataKeys are schema keywords that are metadata, not validation:
+// a node carrying only these constrains nothing and is flagged below.
+var wireMetadataKeys = map[string]bool{
+	"$id": true, "$schema": true, "$comment": true, "$anchor": true,
+	"title": true, "description": true, "default": true, "examples": true,
+	"deprecated": true, "readOnly": true, "writeOnly": true,
+}
+
+// bareNodePaths walks a wire schema (map[string]any tree as seen by MCP
+// clients) and returns the paths of every node that carries no validation
+// keyword at all (the object-literal spelling of a bare true). Such nodes
+// accept any value, so some MCP clients reject them or drop the field;
+// pinBareNodes keeps registered schemas free of them.
+func bareNodePaths(node any, path string) []string {
+	var out []string
+	switch v := node.(type) {
+	case map[string]any:
+		validation := false
+		for k := range v {
+			if !wireMetadataKeys[k] {
+				validation = true
+				break
+			}
+		}
+		if !validation {
+			out = append(out, path)
+		}
+		for k, val := range v {
+			out = append(out, bareNodePaths(val, path+"."+k)...)
+		}
+	case []any:
+		for i, item := range v {
+			out = append(out, bareNodePaths(item, fmt.Sprintf("%s[%d]", path, i))...)
+		}
+	}
+	return out
+}
+
 func TestListVmsHandlerFleet(t *testing.T) {
 	runner := &testRunner{}
 	initParallelsForTest(t, runner, []string{"prlctl", "prlsrvctl"}, "")
@@ -307,9 +420,92 @@ func TestVMInfoHandler(t *testing.T) {
 
 func TestVMInfoHandlerFleetModeError(t *testing.T) {
 	initParallelsForTest(t, &testRunner{}, []string{"prlctl", "prlsrvctl"}, "")
-	if _, _, err := tools.VMInfo(context.Background(), nil, tools.VMInfoInput{}); err == nil {
-		t.Fatal("want error: no target VM in fleet mode")
+	// Fleet mode without a vm_id argument: the mode contract rejects it
+	// before anything runs.
+	if _, _, err := tools.VMInfo(context.Background(), nil, tools.VMInfoInput{}); err == nil || !strings.Contains(err.Error(), "vm_id is required") {
+		t.Fatalf("want vm_id required error, got: %v", err)
 	}
+}
+
+// TestVMInfoHandlerFleetLive fetches one VM by id and by name through the
+// live single-VM command (prlctl list <ref> -a -i --json) in fleet mode.
+func TestVMInfoHandlerFleetLive(t *testing.T) {
+	runner := &testRunner{fn: targetFilteringFn()}
+	initParallelsForTest(t, runner, []string{"prlctl", "prlsrvctl"}, "")
+
+	// By id.
+	_, out, err := tools.VMInfo(context.Background(), nil, tools.VMInfoInput{VMID: vmOneID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Source != "live" {
+		t.Fatalf("source = %q, want live", out.Source)
+	}
+	blob := blobMap(t, out.VM)
+	if blob["ID"] != vmOneID {
+		t.Fatalf("blob ID = %v", blob["ID"])
+	}
+	// The exact single-VM command was used.
+	exe, args := runner.lastCall()
+	if exe != "/usr/local/bin/prlctl" || len(args) != 5 || args[0] != "list" || args[1] != vmOneID ||
+		args[2] != "-a" || args[3] != "-i" || args[4] != "--json" {
+		t.Fatalf("argv = %q %v, want list <id> -a -i --json", exe, args)
+	}
+
+	// By name.
+	_, out, err = tools.VMInfo(context.Background(), nil, tools.VMInfoInput{VMID: "ubuntu_github_builder"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	blob = blobMap(t, out.VM)
+	if blob["ID"] != vmOneID || blob["Name"] != "ubuntu_github_builder" {
+		t.Fatalf("blob = %v", blob)
+	}
+
+	// Unknown ref: prlctl returns no results.
+	if _, _, err := tools.VMInfo(context.Background(), nil, tools.VMInfoInput{VMID: "no-such-vm-xyz"}); err == nil || !strings.Contains(err.Error(), "not found") {
+		t.Fatalf("want not found error, got: %v", err)
+	}
+
+	// Invalid ref (non-printable character) is rejected before any run.
+	if _, _, err := tools.VMInfo(context.Background(), nil, tools.VMInfoInput{VMID: "bad\x00ref"}); err == nil || !strings.Contains(err.Error(), "invalid VM id or name") {
+		t.Fatalf("want invalid ref error, got: %v", err)
+	}
+}
+
+// TestVMInfoHandlerVMModeRejectsExplicitVMID keeps the VM-mode contract:
+// the configured target is used, an explicit vm_id is rejected.
+func TestVMInfoHandlerVMModeRejectsExplicitVMID(t *testing.T) {
+	runner := &testRunner{fn: targetFilteringFn()}
+	initParallelsForTest(t, runner, []string{"prlctl", "prlsrvctl"}, vmOneID)
+
+	if _, _, err := tools.VMInfo(context.Background(), nil, tools.VMInfoInput{VMID: vmTwoID}); err == nil || !strings.Contains(err.Error(), "vm_id must be omitted") {
+		t.Fatalf("want vm_id omitted error, got: %v", err)
+	}
+	// Without vm_id the configured target is still served from the cache.
+	_, out, err := tools.VMInfo(context.Background(), nil, tools.VMInfoInput{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Source != "cache" && out.Source != "refreshed" {
+		t.Fatalf("source = %q, want cache/refreshed", out.Source)
+	}
+	if blobMap(t, out.VM)["ID"] != vmOneID {
+		t.Fatal("wrong VM served in VM mode")
+	}
+}
+
+func blobMap(t *testing.T, v any) map[string]any {
+	t.Helper()
+	raw, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := map[string]any{}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		t.Fatal(err)
+	}
+	return out
 }
 
 func TestParallelsFleetProtocol(t *testing.T) {
@@ -328,11 +524,114 @@ func TestParallelsFleetProtocol(t *testing.T) {
 	if !names["parallels_list_vms"] {
 		t.Fatalf("parallels_list_vms not listed: %v", names)
 	}
-	if names["parallels_vm_info"] {
-		t.Fatalf("parallels_vm_info must not be listed in fleet mode: %v", names)
+	// parallels_vm_info is listed in fleet mode too: it fetches a specific
+	// VM by id or name with prlctl list <vm_id> -a -i --json.
+	var infoInput map[string]any
+	for _, tl := range wireTools {
+		if tl.Name == "parallels_vm_info" {
+			infoInput, _ = tl.InputSchema.(map[string]any)
+		}
 	}
-	if !names["greet"] {
-		t.Fatalf("greet missing: %v", names)
+	if infoInput == nil {
+		t.Fatalf("parallels_vm_info not listed in fleet mode: %v", names)
+	}
+	req := map[string]bool{}
+	for _, r := range infoInput["required"].([]any) {
+		req[r.(string)] = true
+	}
+	if !req["vm_id"] || len(req) != 1 {
+		t.Fatalf("fleet parallels_vm_info required = %v, want exactly [vm_id]", infoInput["required"])
+	}
+
+	// Every wire schema (input and output) must be portable: no node
+	// carries a multi-type "type" array (the generator emits
+	// ["null", T] for Go pointer fields; splitNullableUnions rewrites
+	// those into single-type anyOf branches).
+	for _, tl := range wireTools {
+		for _, kind := range []string{"inputSchema", "outputSchema"} {
+			var sc any
+			if kind == "inputSchema" {
+				sc = tl.InputSchema
+			} else {
+				sc = tl.OutputSchema
+			}
+			if sc == nil {
+				continue
+			}
+			if bad := multiTypePaths(sc, tl.Name+"."+kind); len(bad) > 0 {
+				t.Fatalf("%s: non-portable %s (multi-type nodes at): %v", tl.Name, kind, bad)
+			}
+			if bad := bareNodePaths(sc, tl.Name+"."+kind); len(bad) > 0 {
+				t.Fatalf("%s: non-portable %s (keyword-less nodes at): %v", tl.Name, kind, bad)
+			}
+		}
+	}
+
+	// The Go `any` fields are declared as JSON objects on the wire: the
+	// sequence step's arguments and output, and vm_info's prlctl object.
+	var seqInput, seqOutput, infoOutput map[string]any
+	for _, tl := range wireTools {
+		switch tl.Name {
+		case "parallels_vm_sequence":
+			seqInput, _ = tl.InputSchema.(map[string]any)
+			seqOutput, _ = tl.OutputSchema.(map[string]any)
+		case "parallels_vm_info":
+			infoOutput, _ = tl.OutputSchema.(map[string]any)
+		}
+	}
+	argsNode, _ := seqInput["properties"].(map[string]any)["steps"].(map[string]any)["items"].(map[string]any)["properties"].(map[string]any)["args"].(map[string]any)
+	if argsNode == nil || argsNode["type"] != "object" {
+		t.Fatalf("sequence args node = %v, want type object", argsNode)
+	}
+	if _, has := argsNode["additionalProperties"]; has {
+		t.Fatalf("sequence args must not carry additionalProperties: %v", argsNode)
+	}
+	stepOutNode, _ := seqOutput["properties"].(map[string]any)["results"].(map[string]any)["items"].(map[string]any)["properties"].(map[string]any)["output"].(map[string]any)
+	if stepOutNode == nil || stepOutNode["type"] != "object" {
+		t.Fatalf("sequence step output node = %v, want type object", stepOutNode)
+	}
+	vmNode, _ := infoOutput["properties"].(map[string]any)["vm"].(map[string]any)
+	if vmNode == nil || vmNode["type"] != "object" {
+		t.Fatalf("vm_info vm node = %v, want type object", vmNode)
+	}
+
+	// delay_ms is the one nullable input field: the wire form must be the
+	// anyOf split — two single-type branches, no raw "type" array — with
+	// the description preserved.
+	var typeInput map[string]any
+	for _, tl := range wireTools {
+		if tl.Name == "parallels_vm_type" {
+			typeInput, _ = tl.InputSchema.(map[string]any)
+		}
+	}
+	if typeInput == nil {
+		t.Fatal("parallels_vm_type not listed")
+	}
+	dm, _ := typeInput["properties"].(map[string]any)["delay_ms"].(map[string]any)
+	if dm == nil {
+		t.Fatal("delay_ms missing from the vm_type input schema")
+	}
+	if _, has := dm["type"]; has {
+		t.Fatalf("delay_ms carries a raw type: %v", dm)
+	}
+	if dm["description"] == "" {
+		t.Fatalf("delay_ms lost its description: %v", dm)
+	}
+	branches, _ := dm["anyOf"].([]any)
+	if len(branches) != 2 {
+		t.Fatalf("delay_ms anyOf = %v, want 2 branches", dm)
+	}
+	branchTypes := map[string]bool{}
+	for _, b := range branches {
+		bm, _ := b.(map[string]any)
+		typ, _ := bm["type"].(string)
+		if typ == "" {
+			t.Fatalf("anyOf branch without a single type: %v", b)
+		}
+		branchTypes[typ] = true
+	}
+	if !branchTypes["null"] || !branchTypes["integer"] || len(branchTypes) != 2 {
+		t.Fatalf("delay_ms anyOf types = %v, want exactly {null integer}", branchTypes)
 	}
 
 	// The wire output schema must be portable: no ["null","array"] type
@@ -484,12 +783,11 @@ func TestParallelsDisabledProtocol(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	srv := server.New(logger, testConfig())
 
+	// No binaries: the server still starts and speaks MCP, but exposes
+	// no tools at all.
 	names := toolNames(t, srv)
-	if names["parallels_list_vms"] || names["parallels_vm_info"] {
-		t.Fatalf("parallels tools must not be exposed without the CLI: %v", names)
-	}
-	if !names["greet"] {
-		t.Fatalf("greet missing: %v", names)
+	if len(names) != 0 {
+		t.Fatalf("no tools may be exposed without the CLI: %v", names)
 	}
 
 	clientT, serverT := mcp.NewInMemoryTransports()
@@ -512,8 +810,15 @@ func TestParallelsDisabledProtocol(t *testing.T) {
 			t.Logf("close: %v", err)
 		}
 	}()
-	res, err := cs.CallTool(ctx, &mcp.CallToolParams{Name: "greet", Arguments: map[string]any{"name": "x"}})
-	if err != nil || res.IsError {
-		t.Fatalf("greet should keep working: err=%v res=%+v", err, res)
+	tls, err := cs.ListTools(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tls.Tools) != 0 {
+		var listed []string
+		for _, tl := range tls.Tools {
+			listed = append(listed, tl.Name)
+		}
+		t.Fatalf("client sees tools in disabled mode: %v", listed)
 	}
 }

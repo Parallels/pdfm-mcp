@@ -1,0 +1,30 @@
+// Package tools contains MCP tool implementations. One file per tool.
+package tools
+
+// The "what" part of each parallels_vm_* tool description, as shared
+// constants so the standalone tools and the sequence step registry (which
+// reuses them) can never diverge.
+const (
+	descVMStart          = "Starts a stopped VM, or resumes a paused one (prlctl start)."
+	descVMResume         = "Resumes a paused VM (prlctl resume)."
+	descVMPause          = "Pauses a running VM (prlctl pause)."
+	descVMSuspend        = "Suspends a running VM, keeping its state on disk (prlctl suspend)."
+	descVMRestart        = "Gracefully shuts the VM down and starts it again (prlctl restart)."
+	descVMReset          = "Performs a hard shutdown of the VM and starts it again (prlctl reset)."
+	descVMResetUptime    = "Resets the VM uptime counter, including the counter start date/time (prlctl reset-uptime)."
+	descVMStop           = "Stops the VM. Graceful by default (Parallels Tools, then ACPI); use kill for a hard shutdown, or drop_state to discard a suspended state so the VM boots afresh next time (prlctl stop)."
+	descVMCapture        = "Takes a screenshot of the VM's screen and returns it as a PNG image. Downscaled to 1568 px on the long edge by default; set full_resolution for native size. The VM must be running."
+	descVMExec           = "Runs a command inside the guest VM and returns its exit code, stdout and stderr. Non-zero exits are results, not errors. Defaults to the user currently logged in in the guest (set user to override); no password support. elevated=true is PRIVILEGED: it runs as the guest system account (root/SYSTEM) and cannot be combined with user. Guest needs Parallels Tools. Command max 4096 chars, 5 minute cap."
+	descVMSendKey        = "Sends keyboard input to the VM: a single key (key name like enter, f5, a or a scancode, optional press/release and delay) or a full events sequence (modifier combinations, {delay} pauses). Omitted event means a tap. The VM must be running."
+	descVMTypeText       = "Types ASCII text into the VM (letters, digits, space, punctuation; \\n = Enter, \\t = Tab, \\\\ = literal backslash — a backslash before any other character is typed literally). Shift is handled automatically; characters without a key mapping are rejected. Key events are delayed 200 ms apart by default (delay_ms, 0-5000). The VM must be running."
+	descVMDelete         = "Permanently deletes a VM and all its files from the host. This is IRREVERSIBLE — the VM cannot be recovered. Requires confirm to repeat the VM id or name exactly. Stop the VM first if it is running (prlctl rejects deleting a running VM)."
+	descVMClone          = "Creates a copy of a VM via `prlctl clone`. `name` is required. Options: template, dst (destination directory), regenerate_src_uuid, linked (+ snapshot_id for a snapshot-based linked clone), detach_external_hdd yes/no. The source VM is never modified; full clones copy all VM files, so free disk space must be available. The clone starts in stopped state."
+	descVMEncrypt        = "Encrypts a VM and all of its data with a password (prlctl encrypt). The VM must be stopped. The password is fed to prlctl over stdin and never logged; after success the password is required to start the VM. dry_run checks the prerequisites without encrypting (no password needed). A real run takes as long as the VM's data (minutes to hours on large VMs)."
+	descVMDecrypt        = "Removes the encryption from an encrypted VM (prlctl decrypt). Requires the current password (fed to prlctl over stdin, never logged); a wrong password is a clean error and leaves the VM encrypted. dry_run checks the prerequisites without decrypting (no password needed)."
+	descVMChangePassword = "Changes the encryption password of an encrypted VM (prlctl change-passwd). Requires the current password; the VM must be encrypted. Both passwords are fed to prlctl over stdin (no confirmation prompt) and never logged."
+	descVMReclaimDisk    = "Reclaims disk space occupied by a VM (prlctl reclaim-disk): optimizes the disk file after large amounts of files were deleted in the guest. estimate reports the disk-space breakdown in bytes without reclaiming (read-only, works on running and stopped VMs); a real run frees the space and takes as long as the disk (minutes to hours on large VMs). allow_shutdown may shut a running VM down first before a real run. An encrypted VM needs its current password (stdin, never logged); a real run on an encrypted VM is not supported by prlctl (estimate works)."
+	descVMSnapshotCreate = "Takes a snapshot of a VM (prlctl snapshot): a checkpoint the VM can later be reverted to. Works on running and stopped VMs (state preserved). name (1-128 chars) and description are optional; omitting name stores an empty name, duplicate names are allowed. Snapshots consume host disk space for their data deltas. An encrypted VM needs its current password (stdin, never logged)."
+	descVMSnapshotList   = "Lists a VM's snapshots (prlctl snapshot-list): the whole tree by default (id, name, date, state, current, parent — empty list when the VM has none), one snapshot with snapshot_id (braces optional; unknown ids report not_found), or the ASCII tree with tree. Read-only. An encrypted VM needs its current password (stdin, never logged)."
+	descVMSnapshotDelete = "Deletes a snapshot by id (prlctl snapshot-delete). IRREVERSIBLE: the snapshot and its stored state are gone. Without children, deleting a parent re-roots its children; with children (prlctl -c) the whole subtree is deleted, including the current snapshot (the VM reverts to the deleted snapshot's parent state). An encrypted VM needs its current password (stdin, never logged)."
+	descVMSnapshotSwitch = "Reverts a VM to a snapshot by id (prlctl snapshot-switch): the live state rolls back to the snapshot and changes made after it are lost (the snapshots themselves stay listed). Works on running and stopped VMs. Without skip_resume, a snapshot taken while running starts the VM afterwards; skip_resume never starts it. An encrypted VM needs its current password (stdin, never logged)."
+)

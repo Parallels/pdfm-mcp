@@ -17,7 +17,7 @@ func VMResume(ctx context.Context, _ *mcp.CallToolRequest, in PowerVMInput) (*mc
 func RegisterParallelsVMResume(s *mcp.Server, mode PowerMode) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:         "parallels_vm_resume",
-		Description:  powerDescription("Resumes a paused VM (prlctl resume).", mode),
+		Description:  powerDescription(descVMResume, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false},
 		InputSchema:  powerInputSchema[PowerVMInput](mode),
 		OutputSchema: outputSchemaFor[PowerOutput]("parallels_vm_resume"),

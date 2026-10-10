@@ -20,7 +20,7 @@ func RegisterParallelsVMStop(s *mcp.Server, mode PowerMode) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name: "parallels_vm_stop",
 		Description: powerDescription(
-			"Stops the VM. Graceful by default (Parallels Tools, then ACPI); use kill for a hard shutdown, or drop_state to discard a suspended state so the VM boots afresh next time (prlctl stop).",
+			descVMStop,
 			mode),
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint:    false,
