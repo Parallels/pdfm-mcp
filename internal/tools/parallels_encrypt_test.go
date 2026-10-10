@@ -124,7 +124,7 @@ func TestEncryptFleetProtocol(t *testing.T) {
 	}
 }
 
-func TestDecryptAndChangePasswordFleetProtocol(t *testing.T) {
+func TestDecryptAndChangeEncryptionPasswordFleetProtocol(t *testing.T) {
 	runner := encTestRunner()
 	initParallelsForTest(t, runner, []string{"prlctl", "prlsrvctl"}, "")
 
@@ -139,7 +139,7 @@ func TestDecryptAndChangePasswordFleetProtocol(t *testing.T) {
 		t.Fatalf("stdin = %q", runner.lastStdin())
 	}
 
-	_, outCP, err := tools.VMChangePassword(context.Background(), nil, tools.VMChangePasswordInput{
+	_, outCP, err := tools.VMChangeEncryptionPassword(context.Background(), nil, tools.VMChangeEncryptionPasswordInput{
 		VMID: vmOneID, CurrentPassword: "old", NewPassword: "new",
 	})
 	if err != nil {
@@ -153,10 +153,10 @@ func TestDecryptAndChangePasswordFleetProtocol(t *testing.T) {
 	}
 
 	// Both passwords are required.
-	if _, _, err := tools.VMChangePassword(context.Background(), nil, tools.VMChangePasswordInput{VMID: vmOneID, NewPassword: "new"}); err == nil || !strings.Contains(err.Error(), "current_password is required") {
+	if _, _, err := tools.VMChangeEncryptionPassword(context.Background(), nil, tools.VMChangeEncryptionPasswordInput{VMID: vmOneID, NewPassword: "new"}); err == nil || !strings.Contains(err.Error(), "current_password is required") {
 		t.Fatalf("want current_password required, got: %v", err)
 	}
-	if _, _, err := tools.VMChangePassword(context.Background(), nil, tools.VMChangePasswordInput{VMID: vmOneID, CurrentPassword: "old"}); err == nil || !strings.Contains(err.Error(), "new_password is required") {
+	if _, _, err := tools.VMChangeEncryptionPassword(context.Background(), nil, tools.VMChangeEncryptionPasswordInput{VMID: vmOneID, CurrentPassword: "old"}); err == nil || !strings.Contains(err.Error(), "new_password is required") {
 		t.Fatalf("want new_password required, got: %v", err)
 	}
 }

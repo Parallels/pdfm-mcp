@@ -60,7 +60,7 @@ Restrictions intersect: `--allow-tools` cannot widen `--read-only`.
 | `power` | `parallels_vm_start/resume/pause/suspend/restart/reset/reset_uptime/stop`, `parallels_vm_clone`, `parallels_vm_snapshot_create` | Recoverable state changes (clone and snapshot-create only add things) |
 | `exec` | `parallels_vm_exec`, `parallels_vm_exec_start`*, `parallels_vm_exec_cancel`* | Run commands in the guest (cancel acts on a running job) |
 | `destructive` | `parallels_vm_delete`, `parallels_vm_reclaim_disk`, `parallels_vm_snapshot_delete`, `parallels_vm_snapshot_switch` | Data loss or irreversible; `reclaim_disk` is destructive because its `estimate` flag is an argument, not a different tool |
-| `secret` | `parallels_vm_encrypt`, `parallels_vm_decrypt`, `parallels_vm_change_password` | Handle passwords |
+| `secret` | `parallels_vm_encrypt`, `parallels_vm_decrypt`, `parallels_vm_change_encryption_password` | Handle passwords |
 | `sequence` | `parallels_vm_sequence` | Meta-tool, see 3.3 |
 
 \* Not-yet-existing tools, pre-classified so adding them needs no policy change. The table lives in `internal/policy/policy.go`.

@@ -134,7 +134,7 @@ func toolTable(mode tools.PowerMode, observeRec ocr.Recognizer) []toolEntry {
 		// VM encryption lifecycle (password via stdin, never logged).
 		{"parallels_vm_encrypt", func(s *mcp.Server) { tools.RegisterParallelsVMEncrypt(s, mode) }},
 		{"parallels_vm_decrypt", func(s *mcp.Server) { tools.RegisterParallelsVMDecrypt(s, mode) }},
-		{"parallels_vm_change_password", func(s *mcp.Server) { tools.RegisterParallelsVMChangePassword(s, mode) }},
+		{"parallels_vm_change_encryption_password", func(s *mcp.Server) { tools.RegisterParallelsVMChangeEncryptionPassword(s, mode) }},
 		// VM disk-space reclaim (estimate is read-only; real runs mutate
 		// the disk file).
 		{"parallels_vm_reclaim_disk", func(s *mcp.Server) { tools.RegisterParallelsVMReclaimDisk(s, mode) }},
