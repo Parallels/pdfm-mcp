@@ -83,5 +83,5 @@ func RegisterParallelsVMInfo(s *mcp.Server, mode PowerMode) {
 		// unions) for portability to single-type schema dialects.
 		OutputSchema: outputSchemaFor[VMInfoOutput]("parallels_vm_info"),
 	}
-	mcp.AddTool(s, t, VMInfo)
+	register(s, t, VMInfo)
 }

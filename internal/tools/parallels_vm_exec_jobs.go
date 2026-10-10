@@ -85,7 +85,7 @@ func VMExecStart(ctx context.Context, _ *mcp.CallToolRequest, in ExecStartInput)
 
 // RegisterParallelsVMExecStart adds the parallels_vm_exec_start tool.
 func RegisterParallelsVMExecStart(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:        "parallels_vm_exec_start",
 		Description: powerDescription(descVMExecStart, mode),
 		Annotations: &mcp.ToolAnnotations{
@@ -165,7 +165,7 @@ func VMExecResult(ctx context.Context, _ *mcp.CallToolRequest, in ExecResultInpu
 
 // RegisterParallelsVMExecResult adds the parallels_vm_exec_result tool.
 func RegisterParallelsVMExecResult(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:        "parallels_vm_exec_result",
 		Description: descVMExecResult + jobScopeNote(mode),
 		Annotations: &mcp.ToolAnnotations{
@@ -211,7 +211,7 @@ func VMExecCancel(ctx context.Context, _ *mcp.CallToolRequest, in ExecCancelInpu
 
 // RegisterParallelsVMExecCancel adds the parallels_vm_exec_cancel tool.
 func RegisterParallelsVMExecCancel(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:        "parallels_vm_exec_cancel",
 		Description: descVMExecCancel + jobScopeNote(mode),
 		Annotations: &mcp.ToolAnnotations{

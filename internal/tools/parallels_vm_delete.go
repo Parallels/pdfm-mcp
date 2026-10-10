@@ -48,7 +48,7 @@ func VMDelete(ctx context.Context, _ *mcp.CallToolRequest, in DeleteInput) (*mcp
 // RegisterParallelsVMDelete adds the parallels_vm_delete tool for the
 // given mode.
 func RegisterParallelsVMDelete(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name: "parallels_vm_delete",
 		Description: powerDescription(
 			descVMDelete,

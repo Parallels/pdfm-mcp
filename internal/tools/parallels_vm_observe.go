@@ -365,7 +365,7 @@ func observeInputSchema(mode PowerMode) *jsonschema.Schema {
 // built into the binary on macOS (spec 022), so registration is
 // unconditional; rec is nil only in tests or a broken build.
 func RegisterParallelsVMObserve(s *mcp.Server, mode PowerMode, rec ocr.Recognizer) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:        "parallels_vm_observe",
 		Description: powerDescription(descVMObserve, mode),
 		Annotations: &mcp.ToolAnnotations{

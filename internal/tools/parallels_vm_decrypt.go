@@ -36,7 +36,7 @@ func VMDecrypt(ctx context.Context, _ *mcp.CallToolRequest, in VMDecryptInput) (
 // RegisterParallelsVMDecrypt adds the parallels_vm_decrypt tool for the
 // given mode.
 func RegisterParallelsVMDecrypt(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:         "parallels_vm_decrypt",
 		Description:  powerDescription(descVMDecrypt, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false, DestructiveHint: truePtr(), IdempotentHint: false, OpenWorldHint: truePtr()},

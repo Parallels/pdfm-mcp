@@ -64,5 +64,5 @@ func RegisterParallelsListVms(s *mcp.Server) {
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: true},
 		OutputSchema: outputSchemaFor[ListVmsOutput]("parallels_list_vms"),
 	}
-	mcp.AddTool(s, t, ListVms)
+	register(s, t, ListVms)
 }

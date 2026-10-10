@@ -59,7 +59,7 @@ func VMClone(ctx context.Context, _ *mcp.CallToolRequest, in CloneInput) (*mcp.C
 // RegisterParallelsVMClone adds the parallels_vm_clone tool for the given
 // mode.
 func RegisterParallelsVMClone(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name: "parallels_vm_clone",
 		Description: powerDescription(
 			descVMClone,

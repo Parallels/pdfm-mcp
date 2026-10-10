@@ -66,6 +66,9 @@ jobs:
         run: python3 -B scripts/version.py current
       - uses: anchore/sbom-action/download-syft@v0
         if: steps.changes.outputs.release == 'true'
+      # Snapshot builds are throwaway artifacts: they intentionally do NOT
+      # receive AMPLITUDE_API_KEY, so their telemetry stays silent (spec 024).
+      # Only release.yml bakes the key in, from the release secret.
       - uses: goreleaser/goreleaser-action@v7
         if: steps.changes.outputs.release == 'true'
         with:

@@ -15,7 +15,7 @@ func VMReset(ctx context.Context, _ *mcp.CallToolRequest, in PowerVMInput) (*mcp
 
 // RegisterParallelsVMReset adds the parallels_vm_reset tool for the given mode.
 func RegisterParallelsVMReset(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:        "parallels_vm_reset",
 		Description: powerDescription(descVMReset, mode),
 		Annotations: &mcp.ToolAnnotations{

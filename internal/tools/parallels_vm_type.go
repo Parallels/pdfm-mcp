@@ -80,7 +80,7 @@ func VMTypeText(ctx context.Context, _ *mcp.CallToolRequest, in TypeTextInput) (
 // RegisterParallelsVMType adds the parallels_vm_type tool for the given
 // mode.
 func RegisterParallelsVMType(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name: "parallels_vm_type",
 		Description: powerDescription(
 			descVMTypeText,

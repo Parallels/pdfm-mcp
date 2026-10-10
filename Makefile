@@ -12,10 +12,19 @@ VERSION ?= $(shell cat VERSION)-dev
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
 DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
+# Telemetry (spec 024): the Amplitude key is baked in at build time, like
+# the version. Empty (the default) = telemetry disabled. It is always
+# exported — even empty — because the goreleaser ldflags template requires
+# the variable to exist ({{ .Env.AMPLITUDE_API_KEY }} errors on a missing
+# key, not an empty one).
+AMPLITUDE_API_KEY ?=
+export AMPLITUDE_API_KEY
+
 LDFLAGS := -s -w \
 	-X $(MODULE)/internal/version.Version=$(VERSION) \
 	-X $(MODULE)/internal/version.Commit=$(COMMIT) \
-	-X $(MODULE)/internal/version.Date=$(DATE)
+	-X $(MODULE)/internal/version.Date=$(DATE) \
+	-X $(MODULE)/internal/telemetry.APIKey=$(AMPLITUDE_API_KEY)
 
 # Debug builds keep symbols and disable optimisation/inlining so Delve works well.
 DEBUG_GCFLAGS := all=-N -l

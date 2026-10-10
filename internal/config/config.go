@@ -41,6 +41,11 @@ type Config struct {
 	// AllowVMs restricts the VMs the tools may address (ids or names,
 	// validated, max 64). Empty = no restriction.
 	AllowVMs []string
+
+	// Telemetry (spec 024). The API key is baked in at build time (see
+	// internal/telemetry.APIKey); TelemetryDisabled is the runtime
+	// opt-out (PDFM_MCP_TELEMETRY_DISABLED) and always wins.
+	TelemetryDisabled bool
 }
 
 // Load parses args (without the program name) and the environment.
@@ -58,6 +63,10 @@ func Load(args []string, stderr io.Writer) (Config, error) {
 		allowVMs   = getenv("PDFM_MCP_ALLOW_VMS")
 	)
 	readOnly, err := parseBoolEnv("PDFM_MCP_READ_ONLY", getenv("PDFM_MCP_READ_ONLY"))
+	if err != nil {
+		return cfg, err
+	}
+	telemetryDisabled, err := parseBoolEnv("PDFM_MCP_TELEMETRY_DISABLED", getenv("PDFM_MCP_TELEMETRY_DISABLED"))
 	if err != nil {
 		return cfg, err
 	}
@@ -100,6 +109,8 @@ func Load(args []string, stderr io.Writer) (Config, error) {
 	if cfg.VMID != "" && len(cfg.AllowVMs) > 0 && !slices.Contains(cfg.AllowVMs, cfg.VMID) {
 		return cfg, errors.New("--vm-id is not in --allow-vms")
 	}
+
+	cfg.TelemetryDisabled = telemetryDisabled
 
 	if ttlStr == "" {
 		cfg.VMCacheTTL = DefaultVMCacheTTL

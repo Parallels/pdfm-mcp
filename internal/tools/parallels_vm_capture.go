@@ -112,7 +112,7 @@ func VMCapture(ctx context.Context, _ *mcp.CallToolRequest, in CaptureInput) (*m
 // RegisterParallelsVMCapture adds the parallels_vm_capture tool for the
 // given mode.
 func RegisterParallelsVMCapture(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name: "parallels_vm_capture",
 		Description: powerDescription(
 			descVMCapture,

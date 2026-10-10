@@ -151,7 +151,7 @@ func VMSendKey(ctx context.Context, _ *mcp.CallToolRequest, in SendKeyInput) (*m
 // RegisterParallelsVMSendKey adds the parallels_vm_send_key tool for the
 // given mode.
 func RegisterParallelsVMSendKey(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name: "parallels_vm_send_key",
 		Description: powerDescription(
 			descVMSendKey,

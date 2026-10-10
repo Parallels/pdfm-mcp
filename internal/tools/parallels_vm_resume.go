@@ -15,7 +15,7 @@ func VMResume(ctx context.Context, _ *mcp.CallToolRequest, in PowerVMInput) (*mc
 
 // RegisterParallelsVMResume adds the parallels_vm_resume tool for the given mode.
 func RegisterParallelsVMResume(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:         "parallels_vm_resume",
 		Description:  powerDescription(descVMResume, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false},

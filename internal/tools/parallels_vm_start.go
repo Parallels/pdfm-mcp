@@ -15,7 +15,7 @@ func VMStart(ctx context.Context, _ *mcp.CallToolRequest, in PowerVMInput) (*mcp
 
 // RegisterParallelsVMStart adds the parallels_vm_start tool for the given mode.
 func RegisterParallelsVMStart(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:         "parallels_vm_start",
 		Description:  powerDescription(descVMStart, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false},

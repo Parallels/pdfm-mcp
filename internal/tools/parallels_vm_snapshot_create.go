@@ -43,7 +43,7 @@ func VMCreateSnapshot(ctx context.Context, _ *mcp.CallToolRequest, in VMCreateSn
 // RegisterParallelsVMSnapshotCreate adds the parallels_vm_snapshot_create
 // tool for the given mode.
 func RegisterParallelsVMSnapshotCreate(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:         "parallels_vm_snapshot_create",
 		Description:  powerDescription(descVMSnapshotCreate, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false, DestructiveHint: falsePtr(), IdempotentHint: false, OpenWorldHint: truePtr()},

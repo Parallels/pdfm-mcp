@@ -59,7 +59,7 @@ func VMEncrypt(ctx context.Context, _ *mcp.CallToolRequest, in VMEncryptInput) (
 // RegisterParallelsVMEncrypt adds the parallels_vm_encrypt tool for the
 // given mode.
 func RegisterParallelsVMEncrypt(s *mcp.Server, mode PowerMode) {
-	mcp.AddTool(s, &mcp.Tool{
+	register(s, &mcp.Tool{
 		Name:         "parallels_vm_encrypt",
 		Description:  powerDescription(descVMEncrypt, mode),
 		Annotations:  &mcp.ToolAnnotations{ReadOnlyHint: false, DestructiveHint: truePtr(), IdempotentHint: false, OpenWorldHint: truePtr()},
