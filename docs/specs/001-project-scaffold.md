@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | Implemented (2026-10-09; see Deviations) |
+| Status | Implemented (2026-10-09; README Discord banner added 2026-10-12; see Deviations) |
 | Audience | Implementing agents / engineers |
 | Scope | Repo layout, tooling, Makefile, VS Code debugging, CI, greeter reference tool |
 | Out of scope | Any real `pdfm` domain tools (separate specs) |

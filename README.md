@@ -1,5 +1,9 @@
 # pdfm-mcp
 
+[![Join the pdfm-mcp community on Discord — join the server, then head to #pdfm-mcp](docs/assets/discord-banner.svg)](https://discord.gg/7y3AxDUc8Y)
+
+[Join our Discord server](https://discord.gg/7y3AxDUc8Y), then open **#pdfm-mcp** to ask questions, share ideas, and show what you're building.
+
 A [Model Context Protocol](https://modelcontextprotocol.io) server written in Go, speaking **JSON-RPC 2.0 over stdio**. It ships as a single static binary with no Node runtime — Node is only needed for the optional MCP Inspector debugging UI.
 
 The **Parallels Desktop module** lists and inspects VMs (see below) and is the template for adding more command-backed modules. The build/run/test/debug/connect loop is exercised by the test suites: `make check` (unit + in-memory protocol tests) and `make test-e2e` (spawns the real binary over stdio).
@@ -30,7 +34,7 @@ review the generated `VERSION` / `CHANGELOG.md` changes. After merging, run
 **Release** on `main` with `canary`, `beta` or `production`:
 
 | Channel | Tag | Distribution |
-|---|---|---|
+| --- | --- | --- |
 | Canary | `vX.Y.Z-canary.<run>` | GitHub prerelease |
 | Beta | `vX.Y.Z-beta.<run>` | GitHub prerelease |
 | Production | `vX.Y.Z` | GitHub Release, MCPB, optionally Homebrew and MCP Registry |
@@ -57,8 +61,8 @@ Downloads the universal (Apple silicon + Intel) binary from GitHub Releases, ver
 ### Homebrew (macOS)
 
 ```sh
-brew tap <tap owner>/tap
-brew install --cask <tap owner>/tap/pdfm-mcp
+brew tap Parallels/tap
+brew install --cask Parallels/tap/pdfm-mcp
 pdfm-mcp --version
 ```
 
@@ -109,7 +113,7 @@ Restart the client after editing. Desktop hides stderr, which is why `PDFM_MCP_L
 ### Configuration
 
 | Variable | Default | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `PDFM_MCP_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `PDFM_MCP_LOG_FILE` | empty | If set, logs are also appended to this file |
 | `PDFM_MCP_VM_ID` | empty | Parallels VM id or name to target (see module below) |
@@ -137,7 +141,7 @@ Flags: `--version` prints version and exits; `--log-level` and `--vm-id` overrid
 When both `prlctl` and `prlsrvctl` are found at startup (PATH, then `/usr/local/bin` and `/usr/bin`), the module enables read tools backed by a 30s in-memory cache of `prlctl list -a -i --json` plus the power-operation tools:
 
 | Tool | Modes | What it does |
-|---|---|---|
+| --- | --- | --- |
 | `parallels_list_vms` | fleet + VM | The VM list with full prlctl detail (all VMs, or only the target) |
 | `parallels_vm_info` | fleet + VM | The exact prlctl JSON object of one VM. VM mode: the `--vm-id` target from the in-memory cache. Fleet mode: any VM by id or name, fetched live on every call with the list command scoped to it (`prlctl list <vm_id> -a -i --json`) — `vm_id` is required |
 | `parallels_vm_start` | fleet + VM | `prlctl start` (start a stopped VM or resume a paused one) |
@@ -309,7 +313,7 @@ for the full grammar and budgets.
 stdin/stdout are the protocol channel, so a normal F5 session cannot feed JSON-RPC to the process. `.vscode/launch.json` provides three patterns:
 
 | Pattern | When | How |
-|---|---|---|
+| --- | --- | --- |
 | **A. Debug tests** | Day-to-day development | In-memory and e2e tests run the real server logic; set breakpoints in handlers and use "Debug current test file" / "Debug e2e test". |
 | **B. Launch in integrated terminal** | Poking the server by hand | Delve launches with `console: integratedTerminal`; paste JSON-RPC lines into the terminal. |
 | **C. Attach to a client-spawned process** | Debugging exactly what Claude / the Inspector does | The client spawns the binary; VS Code attaches to its PID. |
