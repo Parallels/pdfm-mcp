@@ -1,4 +1,4 @@
-# pdfm-mcp
+# Parallels Desktop MCP
 
 [![Join the pdfm-mcp community on Discord — join the server, then head to #pdfm-mcp](docs/assets/discord-banner.svg)](https://discord.gg/7y3AxDUc8Y)
 
