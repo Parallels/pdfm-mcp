@@ -56,7 +56,8 @@ VERSION and a generated changelog. Review the notes for accuracy and publication
 suitability, adjust them as needed, wait for CI and merge. The workflow collects
 merged PRs on main since the previous release PR up to the checked-out commit,
 using their `## Changelog` bullets or their title as a fallback. The
-`release-request` label is created automatically. No AI API key is needed.
+previous release PR is identified by its `release/<version>` branch. No labels
+or AI API key are needed.
 
 Run **Release** from `main` and choose:
 
@@ -191,7 +192,7 @@ Chosen: n/a (repo is public, release assets download anonymously).
 | `HOMEBREW_TAP_TOKEN` | secret | fine-grained PAT, `contents:write` on the tap repo only |
 | `AMPLITUDE_API_KEY` | secret (`release` env) | Amplitude project API key; baked into release binaries at build time (spec 024). Unset = the release ships without telemetry and the run logs a warning |
 | `MCP_PRIVATE_KEY` | secret (DNS auth option only) | Ed25519 private key |
-| `GH_WORKFLOW_TOKEN` | optional repo secret | Contents, Pull requests and Issues read/write on this repo; lets generated release PRs trigger CI |
+| `GH_WORKFLOW_TOKEN` | optional repo secret | Contents and Pull requests read/write on this repo; lets generated release PRs trigger CI |
 | `PUBLISH_PUBLIC` | repo variable | `'true'` when public channels are approved |
 | `PUBLISH_HOMEBREW` | repo variable | `'true'` to update the tap (tap visibility approved) |
 | `MCP_SERVER_NAME` | repo variable | registry name, e.g. chosen per spec 016 |

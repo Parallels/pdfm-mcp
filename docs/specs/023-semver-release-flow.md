@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Implemented (local verification complete 2026-10-10; GitHub signing/publication rehearsal pending release owner) |
+| Status | Implemented (local verification complete 2026-10-10; label-free release PR fix 2026-10-12; GitHub signing/publication rehearsal pending release owner) |
 | Scope | Version file, release PR workflow, release channel selection, changelog, release guards, CI and runbook |
 | Reference | an internal Parallels release-flow reference: `create_release_pr.yml`, `release.yml`, `scripts/version.sh` |
 
@@ -89,3 +89,15 @@ Verified 2026-10-10; details in [QA 023](../qa/023-semver-release-flow-QA.md).
 - No new dependencies, release, remote branch, PR or repository setting was
   created. Protected environment/secrets, generated PR CI and a signed channel
   release still require a GitHub rehearsal after these files are committed.
+
+### Release PR label endpoint fix (2026-10-12)
+
+- Removed label creation and assignment, and the Issues permission. Identify
+  the previous release PR by its `release/<version>` head branch, preserving
+  the merged-at cutoff. Changelog generation excludes release branches and
+  retains legacy label exclusion. This avoids the failing labels REST endpoint
+  when the chosen workflow token cannot access it. No new dependencies.
+- Verification: `make check`, `make test-e2e`, `make test-scripts` (13 Python
+  tests), workflow `actionlint`, and `git diff --check` pass. Go caches used
+  writable temporary directories; checks requiring local listeners/Parallels
+  were rerun outside the sandbox. GitHub workflow rerun remains pending.

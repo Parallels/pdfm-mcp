@@ -96,6 +96,12 @@ class ChangelogTests(unittest.TestCase):
         self.assertEqual(changelog.entries_from_prs(prs), ["- feat: add OCR\n  with Vision",
                          "- fix: screenshot", "- fix: fallback title (#2)", "- Fallback title (#4)"])
 
+    def test_release_branches_are_excluded_without_labels(self):
+        release = dict(pr(1), headRefName="release/1.2.3")
+        change = dict(pr(2), headRefName="release/fix-ocr")
+        self.assertEqual(changelog.entries_from_prs([release, change]),
+                         ["- Fallback title (#2)"])
+
     def test_generation_preserves_old_notes(self):
         previous = "# Changelog\n\nIntro.\n\n## [1.2.3]\n\n- fix: old\n"
         updated = changelog.generate(previous, "1.3.0", [pr(1, body="## Changelog\n- feat: new")])

@@ -28,7 +28,8 @@ def section(text, version):
 def entries_from_prs(prs):
     entries = []
     for pr in sorted(prs, key=lambda p: (p["mergedAt"], p["number"])):
-        if any(label["name"] == "release-request" for label in pr.get("labels", [])):
+        if (re.fullmatch(r"release/[0-9]+\.[0-9]+\.[0-9]+", pr.get("headRefName", ""))
+                or any(label["name"] == "release-request" for label in pr.get("labels", []))):
             continue
         in_section = False
         bullets = []

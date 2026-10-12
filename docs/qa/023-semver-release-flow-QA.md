@@ -40,7 +40,7 @@ missing/empty/duplicate sections and exact extraction of a requested version.
    optional `GH_WORKFLOW_TOKEN` for generated PR CI, the `release` environment
    reviewers, five `MACOS_*` secrets and bot branch/tag permissions.
 2. Run Create Release PR on main with each bump type in a rehearsal repository.
-   Check the lower version components reset, branch/label/PR are correct,
+   Check the lower version components reset, branch/PR are correct (no label required),
    notes contain only merged main changes through the checkout, and CI runs.
 3. On the real repository, run Release/canary then beta. Verify plain
    `v0.1.0-canary.N` / `v0.1.0-beta.N` tags, correct prerelease status,
