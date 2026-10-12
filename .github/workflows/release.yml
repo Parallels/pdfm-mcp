@@ -278,9 +278,9 @@ jobs:
     permissions:
       contents: read
     env:
-      TAP_REPO: "Parallels/homebrew-tap"   # confirm; repo name must keep the homebrew- prefix
+      TAP_REPO: "Parallels/homebrew-tap"
       VERSION: ${{ needs.goreleaser.outputs.version }}
-      BOT_EMAIL: "<bot-email>"                  # an org-owned address, not a personal one
+      BOT_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
     steps:
       - uses: actions/download-artifact@v7
         with: { name: homebrew-cask }
@@ -297,6 +297,7 @@ jobs:
           # Token via request header, never in the URL (keeps it out of git errors/logs).
           git -c "http.https://github.com/.extraHeader=Authorization: token ${HOMEBREW_TAP_TOKEN}" clone -q "https://github.com/${TAP_REPO}" "$TAPS/$owner/$repo"
           brew trust "$tapname"
+          mkdir -p "$TAPS/$owner/$repo/Casks"
           cp pdfm-mcp.rb "$TAPS/$owner/$repo/Casks/"
           cask="$TAPS/$owner/$repo/Casks/pdfm-mcp.rb"
           brew style --fix "$cask"
