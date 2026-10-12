@@ -219,7 +219,7 @@ and [GoReleaser's tag override](https://goreleaser.com/resources/cookbooks/set-a
 ## 9. Install (for the README, once released)
 
 See the Install draft supplied with this work; Homebrew:
-`brew tap <tap owner>/tap && brew install --cask <tap owner>/tap/pdfm-mcp`
+`brew tap Parallels/tap && brew install --cask Parallels/tap/pdfm-mcp`
 (confirm the working form on a clean Mac), MCPB: double-click the `.mcpb`.
 
 ## Open items before the first release

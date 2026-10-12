@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="180" viewBox="0 0 900 180" role="img"
+  aria-labelledby="title description">
+  <title id="title">Join the Parallels Desktop MCP community on Discord</title>
+  <desc id="description">Join our Discord server, then head to the #pdfm-mcp channel to ask
+    questions, share ideas, and connect.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1">
+      <stop stop-color="#23234b" />
+      <stop offset="1" stop-color="#5865f2" />
+    </linearGradient>
+  </defs>
+  <rect width="900" height="180" rx="20" fill="url(#background)" />
+  <circle cx="850" cy="20" r="120" fill="#fff" opacity=".05" />
+  <circle cx="760" cy="180" r="90" fill="#fff" opacity=".05" />
+  <rect x="32" y="50" width="72" height="64" rx="18" fill="#fff" opacity=".15" />
+  <path d="M49 69h38v26H68l-12 9v-9h-7z" fill="#fff" />
+  <circle cx="58" cy="82" r="2" fill="#5865f2" />
+  <circle cx="68" cy="82" r="2" fill="#5865f2" />
+  <circle cx="78" cy="82" r="2" fill="#5865f2" />
+  <g fill="#fff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+    <text x="128" y="53" font-size="12" font-weight="700" letter-spacing="2">PARALLELS DESKTOP MCP
+      COMMUNITY</text>
+    <text x="128" y="91" font-size="30" font-weight="700">Let's talk on Discord</text>
+    <text x="128" y="120" font-size="16">Join the server, then head to #pdfm-mcp.</text>
+    <text x="128" y="145" font-size="14" opacity=".85">Ask questions · Share ideas · Show what
+      you're building</text>
+  </g>
+  <rect x="692" y="69" width="176" height="44" rx="22" fill="#fff" />
+  <text x="780" y="97" text-anchor="middle" fill="#343dab"
+    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="15"
+    font-weight="700">Join Discord →</text>
+</svg>
