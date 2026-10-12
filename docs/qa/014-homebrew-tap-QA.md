@@ -109,3 +109,14 @@ A live run with this workflow revision remains pending.
 Local verification: `actionlint`, `make check`, `make test-e2e`, and
 `git diff --check` pass. GitHub tap publication with the corrected runner
 remains pending.
+
+## Git HTTPS credential helper correction (2026-10-12)
+
+The publisher now configures Git with `gh auth setup-git` and sources
+`GH_TOKEN` from the tap secret. An isolated local check confirms Git receives
+a username and environment token without persisting that token in Git config.
+The real secret must have Contents read/write access on `Parallels/homebrew-tap`.
+Live authenticated push remains pending the corrected workflow.
+
+Verification: `make check`, `make test-e2e`, `actionlint`, and
+`git diff --check` pass. An isolated Git credential-helper check also passes.

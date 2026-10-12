@@ -141,7 +141,8 @@ already succeeded, re-run only the failed downstream job. If the signature
 check in the `mcpb` job fails after the release was
 created, the release is unsigned: delete it immediately.
 If the tap step fails (token missing/expired) the GitHub Release already
-exists: fix the secret and re-run the failed **`tap`** job (it is isolated;
+exists: verify the secret has Contents read/write on `Parallels/homebrew-tap`
+and re-run the failed **`tap`** job (it is isolated;
 the release and the `mcpb` job are untouched), or commit the cask from
 `dist/` by hand through a reviewed PR to the tap.
 If a tap failure requires changing the workflow (for example, correcting the

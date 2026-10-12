@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Implemented (local verification complete 2026-10-09; tap repo created 2026-10-12; macOS tap runner fixed 2026-10-12; first stable cask publish pending release owner) |
+| Status | Implemented (local verification complete 2026-10-09; tap repo created 2026-10-12; macOS runner and Git authentication fixed 2026-10-12; first stable cask publish pending release owner) |
 | Audience | Implementing agents / engineers, release owner |
 | Scope | A dedicated tap repository, the GoReleaser `homebrew_casks` block, token/permissions, tap CI, install/upgrade/uninstall docs, MCP client configuration notes |
 | Depends on | Spec 013 (signed, notarized universal macOS archive on a GitHub Release) |
@@ -223,3 +223,19 @@ claude mcp add pdfm-mcp -- "$(brew --prefix)/bin/pdfm-mcp"
 Local verification: `actionlint`, `make check`, `make test-e2e`, and
 `git diff --check` pass. GitHub tap publication with the corrected runner
 remains pending.
+
+### Tap Git authentication fix (2026-10-12)
+
+- Replaced the Git commands' `Authorization: token` extra-header with
+  `gh auth setup-git --hostname github.com --force` and a step-scoped
+  `GH_TOKEN` sourced from `HOMEBREW_TAP_TOKEN`. Git HTTPS receives its username
+  and password through the CLI credential helper, avoiding interactive prompts.
+- Clone and push share the helper; tokens are never embedded in URLs,
+  command arguments, or persisted Git configuration. `GIT_TERMINAL_PROMPT=0`
+  makes authentication failures fail immediately on CI. No new dependencies.
+- Verified with an isolated temporary Git/CLI configuration and a dummy token:
+  `git credential fill` receives the token, while Git config contains no token.
+  The actual protected tap token and its write permission remain CI checks.
+
+Verification: `make check`, `make test-e2e`, `actionlint`, and
+`git diff --check` pass. An isolated Git credential-helper check also passes.

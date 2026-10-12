@@ -286,17 +286,20 @@ jobs:
       - uses: actions/download-artifact@v7
         with: { name: homebrew-cask }
       - name: Normalise, audit and publish the cask
-        env: { HOMEBREW_TAP_TOKEN: "${{ secrets.HOMEBREW_TAP_TOKEN }}" }
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          GIT_TERMINAL_PROMPT: "0"
         run: |
           set -euo pipefail
           export HOMEBREW_NO_AUTO_UPDATE=1
-          [[ -n ${HOMEBREW_TAP_TOKEN:-} ]] || { echo "HOMEBREW_TAP_TOKEN is not set in the release environment" >&2; exit 1; }
+          [[ -n ${GH_TOKEN:-} ]] || { echo "HOMEBREW_TAP_TOKEN is not set in the release environment" >&2; exit 1; }
+          # Git HTTPS uses the CLI credential helper; credentials stay out of URLs/config.
+          gh auth setup-git --hostname github.com --force
           owner=${TAP_REPO%%/*}; repo=${TAP_REPO##*/}
           tapname="${owner}/${repo#homebrew-}"   # brew strips the homebrew- prefix from tap names
           TAPS="$(brew --repository)/Library/Taps"
           mkdir -p "$TAPS/$owner"
-          # Token via request header, never in the URL (keeps it out of git errors/logs).
-          git -c "http.https://github.com/.extraHeader=Authorization: token ${HOMEBREW_TAP_TOKEN}" clone -q "https://github.com/${TAP_REPO}" "$TAPS/$owner/$repo"
+          git clone -q "https://github.com/${TAP_REPO}" "$TAPS/$owner/$repo"
           brew trust "$tapname"
           mkdir -p "$TAPS/$owner/$repo/Casks"
           cp pdfm-mcp.rb "$TAPS/$owner/$repo/Casks/"
@@ -308,8 +311,7 @@ jobs:
           git -C "$TAPS/$owner/$repo" add Casks/pdfm-mcp.rb
           git -C "$TAPS/$owner/$repo" -c commit.gpgsign=false -c user.name="pdfm-mcp release bot" -c user.email="${BOT_EMAIL}" \
             commit -m "pdfm-mcp v${VERSION}"
-          git -C "$TAPS/$owner/$repo" -c "http.https://github.com/.extraHeader=Authorization: token ${HOMEBREW_TAP_TOKEN}" \
-            push origin "HEAD:${branch}"
+          git -C "$TAPS/$owner/$repo" push origin "HEAD:${branch}"
 
   # Public listing: only behind the publication gate (spec 013 section 3).
   registry:
