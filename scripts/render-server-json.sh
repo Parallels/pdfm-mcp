@@ -14,6 +14,7 @@ die() { printf 'render-server-json: error: %s\n' "$*" >&2; exit 1; }
 [[ $# -eq 4 ]] || die "usage: render-server-json.sh <name> <version> <sha256-file> <out>"
 name=$1 version=$2 sha_file=$3 out=$4
 
+[[ -n $name ]] || die "server name is empty; set MCP_SERVER_NAME to io.github.<repository-owner>/pdfm-mcp for GitHub OIDC"
 name_re='^[A-Za-z0-9.-]+/[A-Za-z0-9._-]+$'
 [[ ${#name} -le 200 && $name =~ $name_re ]] || die "invalid server name (expected reverse-DNS namespace/name)"
 
@@ -48,4 +49,4 @@ jq -e --arg n "$name" --arg v "$version" --arg h "$sha" \
 
 mkdir -p "$(dirname "$out")"
 cp "$tmp" "$out"
-printf 'render-server-json: wrote %s\n' "$out"
+printf 'render-server-json: wrote %s\n' "$out" >&2

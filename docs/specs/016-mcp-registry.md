@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Implemented (local verification complete 2026-10-09; **publication still blocked on owner + Legal approval** per the gate) |
+| Status | Implemented (local verification complete 2026-10-09; registry configuration fixed 2026-10-12; live publication verification pending; publication gate retained) |
 | Audience | Implementing agents / engineers, release owner |
 | Scope | `server.json` template, namespace + authentication choice, publishing job in the release workflow, verification, withdrawal procedure |
 | Depends on | Spec 013 (release), spec 015 (the `.mcpb` asset and its sha256) |
@@ -207,3 +207,26 @@ A listing is public and may be mirrored. Before publishing, treat it as irrevers
 - **CI schema validation added** (section 10.2): new `registry-server-json` job in `ci.yml` validates a rendered `server.json` with `ajv` + `ajv-formats` against the live schema URL on PRs touching `packaging/registry/**` or `scripts/render-server-json.sh` (schema cached per version date; negative control verified locally).
 - **Withdrawal mechanism identified** (section 8 / known unknown): `mcp-publisher status --status <active|deprecated|deleted> [--message] [--all-versions] <name> [version]` (v1.8.1; matches the registry's status endpoints). docs/release.md section 6 now documents the exact commands.
 - **Verified locally (2026-10-09):** render script table tests pass; hand render produces a file whose `version`/`fileSha256` match; the rendered file passes the **live** official validation; the mcp-publisher v1.8.1 tarball verifies against its published checksum and the CLI runs.
+
+### Production registry configuration fix (2026-10-12)
+
+- The production renderer received an empty name: repository variable
+  `MCP_SERVER_NAME` was absent. Set it to `io.github.Parallels/pdfm-mcp`,
+  matching the GitHub repository owner and the workflow's OIDC authentication.
+- The workflow also defaults the name to `io.github.<repository_owner>/pdfm-mcp`
+  if the variable is unset. Explicit configured names still undergo validation.
+- Pin mcp-publisher to the already documented v1.8.1 and its Linux amd64
+  SHA256 `a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc`.
+  Rechecked the official checksum file and archive; no new dependencies.
+  This supersedes the provisional publisher placeholders above.
+- Empty-name diagnostics now identify the missing setting. Render success
+  logs go to stderr. Regression coverage includes the Parallels namespace,
+  empty-name rejection without output, and stdout remaining empty.
+- Public publication stays gated by `PUBLISH_PUBLIC`; no registry entry was
+  published while fixing configuration. Old workflow reruns keep their original
+  publisher placeholders; merge the workflow correction before a new run.
+
+Verification: `make check`, `make test-e2e`, `make test-scripts` (19
+registry assertions), `actionlint`, and `git diff --check` pass. Rendering
+with the actual published v0.1.1 MCPB checksum succeeds for the configured
+Parallels namespace. No registry publication was attempted.

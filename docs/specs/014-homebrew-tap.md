@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Implemented (local verification complete 2026-10-09; tap repo created 2026-10-12; first stable cask publish pending release owner) |
+| Status | Implemented (local verification complete 2026-10-09; tap repo created 2026-10-12; macOS tap runner fixed 2026-10-12; first stable cask publish pending release owner) |
 | Audience | Implementing agents / engineers, release owner |
 | Scope | A dedicated tap repository, the GoReleaser `homebrew_casks` block, token/permissions, tap CI, install/upgrade/uninstall docs, MCP client configuration notes |
 | Depends on | Spec 013 (signed, notarized universal macOS archive on a GitHub Release) |
@@ -208,3 +208,18 @@ claude mcp add pdfm-mcp -- "$(brew --prefix)/bin/pdfm-mcp"
   passes (run 38218933755). `make check`, `make test-e2e`, workflow
   `actionlint`, and `git diff --check` pass. Stable install/audit remains
   pending an actual stable archive and generated cask.
+
+### Tap runner fix (2026-10-12)
+
+- Production v0.1.1 published successfully, but the downstream tap job failed
+  with `brew: command not found` on `ubuntu-latest`.
+- Run the tap publisher on `macos-latest`, which includes Homebrew and supports
+  macOS cask audits. GoReleaser `skip_upload: true` remains intentional: the
+  downstream job owns normalization, audit, and publication. No dependencies.
+- Rerunning the old job retains its original workflow revision. Recover the
+  existing release using its saved cask artifact on macOS; never recreate or
+  move the already published v0.1.1 release/tag to retry tap publication.
+
+Local verification: `actionlint`, `make check`, `make test-e2e`, and
+`git diff --check` pass. GitHub tap publication with the corrected runner
+remains pending.

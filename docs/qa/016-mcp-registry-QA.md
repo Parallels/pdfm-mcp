@@ -90,3 +90,17 @@ the **live** registry validation, offline CI validation with a negative
 control, verified publisher pin candidate with corrected asset name, and the
 withdrawal mechanism identified and documented. Steps 4, 7–9 are gated on
 publication approval; 5/10 live-confirm on the first tag.
+
+## Production configuration correction (2026-10-12)
+
+`MCP_SERVER_NAME` was unset and caused the renderer to fail. The repository
+variable is now `io.github.Parallels/pdfm-mcp`, with an owner-derived workflow
+fallback. The publisher placeholders are replaced with v1.8.1 and the verified
+Linux amd64 checksum. Render tests cover the exact namespace and actionable
+empty-name diagnostics, and confirm all logging stays on stderr.
+Live OIDC publication with the corrected workflow remains pending.
+
+Verification: `make check`, `make test-e2e`, `make test-scripts` (19
+registry assertions), `actionlint`, and `git diff --check` pass. Rendering
+with the actual published v0.1.1 MCPB checksum succeeds for the configured
+Parallels namespace. No registry publication was attempted.

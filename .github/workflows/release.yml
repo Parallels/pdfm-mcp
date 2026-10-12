@@ -273,7 +273,8 @@ jobs:
   tap:
     needs: goreleaser
     if: needs.goreleaser.outputs.prerelease == 'false' && vars.PUBLISH_HOMEBREW == 'true'
-    runs-on: ubuntu-latest
+    # Homebrew is preinstalled on macOS runners; cask audits target macOS.
+    runs-on: macos-latest
     environment: release
     permissions:
       contents: read
@@ -320,14 +321,11 @@ jobs:
       id-token: write            # OIDC option only
     env:
       VERSION: ${{ needs.goreleaser.outputs.version }}
-      MCP_SERVER_NAME: ${{ vars.MCP_SERVER_NAME }}
-      # Pin BOTH before the first publish (docs/release.md, Open items). Never "latest".
-      # Verified candidate (2026-10-09): v1.8.1, linux amd64 sha256
-      # a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc per the
-      # official registry_1.8.1_checksums.txt — a human must review it and paste
-      # the values here before the first publish.
-      MCP_PUBLISHER_VERSION: "<pinned mcp-publisher version>"
-      MCP_PUBLISHER_SHA256: "<sha256 of the linux amd64 tarball, reviewed by a human>"
+      # GitHub OIDC authenticates the repository owner's namespace.
+      MCP_SERVER_NAME: ${{ vars.MCP_SERVER_NAME || format('io.github.{0}/pdfm-mcp', github.repository_owner) }}
+      # Pinned Linux amd64 release, checked against the official checksum file.
+      MCP_PUBLISHER_VERSION: "1.8.1"
+      MCP_PUBLISHER_SHA256: "a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc"
     steps:
       - uses: actions/checkout@v7
         with: { ref: "${{ github.sha }}" }

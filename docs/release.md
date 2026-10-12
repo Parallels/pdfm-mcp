@@ -144,6 +144,14 @@ If the tap step fails (token missing/expired) the GitHub Release already
 exists: fix the secret and re-run the failed **`tap`** job (it is isolated;
 the release and the `mcpb` job are untouched), or commit the cask from
 `dist/` by hand through a reviewed PR to the tap.
+If a tap failure requires changing the workflow (for example, correcting the
+runner to `macos-latest`), merging the fix does not update an old run's workflow
+revision. Recover that release by downloading its `homebrew-cask` artifact from
+the successful GoReleaser job and running the tap job's normalization, audit,
+and publish commands on a Mac with the tap token. Keep the published release
+and tag unchanged. Subsequent releases use the corrected runner. See
+[GitHub's rerun behavior](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs).
+
 The `registry` job is independent and re-runnable; publishing the same version
 twice is an error to investigate, never to force.
 Bundle uploads also refuse to overwrite existing assets. If a partially
@@ -195,7 +203,7 @@ Chosen: n/a (repo is public, release assets download anonymously).
 | `GH_WORKFLOW_TOKEN` | optional repo secret | Contents and Pull requests read/write on this repo; lets generated release PRs trigger CI |
 | `PUBLISH_PUBLIC` | repo variable | `'true'` when public channels are approved |
 | `PUBLISH_HOMEBREW` | repo variable | `'true'` to update the tap (tap visibility approved) |
-| `MCP_SERVER_NAME` | repo variable | registry name, e.g. chosen per spec 016 |
+| `MCP_SERVER_NAME` | repo variable | optional registry name override; defaults to `io.github.<repository-owner>/pdfm-mcp` for GitHub OIDC |
 
 Owners and expiry dates live in the team password manager, never in the repo.
 If any value is pasted into a chat, issue or log, treat it as compromised,
@@ -232,8 +240,8 @@ Every `<...>` placeholder and unverified assumption:
 | MIT `LICENSE` added as an interim choice; Legal to confirm the license and copyright holder line | `LICENSE`, `.goreleaser.yaml`, `packaging/mcpb/manifest.json.tmpl` | Legal |
 | Tap repo `Parallels/homebrew-tap` created; verify `HOMEBREW_TAP_TOKEN` access and publish the first stable cask (`PUBLISH_HOMEBREW` is enabled) | `release.yml` `tap` job, `.goreleaser.yaml` | release owner |
 | Brand-approved `packaging/mcpb/icon.png` (512x512). A neutral placeholder is committed so dev builds work; replace before a public release | packaging | brand/Legal |
-| Registry: GitHub OIDC, name `io.github.Parallels/pdfm-mcp` (confirm owner casing with `mcp-publisher validate`), set `MCP_SERVER_NAME`, `PUBLISH_PUBLIC` approval; keep `mcp-publisher` >= 1.7.9 | repo vars, spec 016 | owner + Legal |
-| `mcp-publisher` pin: v1.8.1 verified as the candidate (2026-10-09; linux amd64 sha256 in the official `registry_1.8.1_checksums.txt`, recorded in `release.yml`); a human must review and paste the values into the `registry` job env | `release.yml` `registry` job env | release owner |
+| Registry: verify live publication of `io.github.Parallels/pdfm-mcp` using GitHub OIDC (`MCP_SERVER_NAME` configured; `PUBLISH_PUBLIC` enabled) | repo vars, spec 016 | owner + Legal |
+| `mcp-publisher` v1.8.1 and Linux amd64 checksum pinned and reverified 2026-10-12; verify the first live publish | `release.yml` `registry` job env | release owner |
 | `AMPLITUDE_API_KEY` in the `release` environment (Amplitude project key) before the first release that should report usage; the run warns loudly when it is absent | `release.yml` `goreleaser` job | release owner |
 | Verify action majors: `anchore/sbom-action/download-syft@v0`, `actions/attest-build-provenance@v3`, `actions/setup-node@v5` | workflows | implementer |
 | `${__dirname}` command form, empty `user_config` behaviour, exec bit survival in Claude Desktop | spec 015 section 10, QA 015 | QA |

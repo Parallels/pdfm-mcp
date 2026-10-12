@@ -98,3 +98,14 @@ normalization step; the publish gate (stable tag + `PUBLISH_HOMEBREW` +
 token) is wired in `release.yml`. Everything that touches the real tap
 repo is gated behind a token and the publication variable and is
 release-owner work.
+
+## Production runner correction (2026-10-12)
+
+The v0.1.1 product release published, but tap publication failed because
+`ubuntu-latest` did not provide `brew`. The tap job now uses `macos-latest`,
+matching the tap CI and the platform required by its cask audits.
+A live run with this workflow revision remains pending.
+
+Local verification: `actionlint`, `make check`, `make test-e2e`, and
+`git diff --check` pass. GitHub tap publication with the corrected runner
+remains pending.
