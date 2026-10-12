@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | Implemented (2026-10-09; README Discord banner added 2026-10-12; see Deviations) |
+| Status | Implemented (2026-10-09; README user guide and CONTRIBUTING added 2026-10-12; see Deviations) |
 | Audience | Implementing agents / engineers |
 | Scope | Repo layout, tooling, Makefile, VS Code debugging, CI, greeter reference tool |
 | Out of scope | Any real `pdfm` domain tools (separate specs) |
@@ -1029,3 +1029,13 @@ Implemented 2026-10-09 with Go 1.27.1 (darwin/arm64), golangci-lint v2, Make, No
    - `internal/tools/greet_test.go` and `test/e2e/stdio_test.go`: `Close()` calls wrapped in defers that log the error instead of `defer x.Close()` (errcheck).
 5. **`greet` reference tool removed (2026-10-09, post-implementation).** It was scaffolding for testing the MCP plumbing only. With it gone the server exposes no tools when the Parallels module is disabled, `TestStdioEndToEnd` now asserts connect + tools/list + module gating instead of calling `greet`, and the disabled-mode protocol test asserts zero tools. The VS Code breakpoint walkthrough in the README now points at `ListVms`.
 6. **`make smoke` keeps stdin open for 1 s after printing the requests** (`{ printf …; sleep 1; } | ./bin/pdfm-mcp`). As written in §7.1, the pipe closes immediately after the third line; SDK v1.8.0 tears the session down on stdin EOF, which in a tight race tears it down before the `initialize`/`tools/list` responses are flushed, so stdout comes back empty. With the 1 s hold, `make smoke` reliably prints both responses (verified). Real clients keep stdin open, so this only affects the smoke target.
+
+7. **Documentation reorganized (2026-10-12).** README now covers installation,
+   Claude Code/Desktop, Codex CLI/IDE, VS Code/Copilot, tool descriptions,
+   access controls, and updates. Build/test/debug/release and contribution
+   guidance moved to `CONTRIBUTING.md`; detailed tool behavior and sequence
+   examples live in `docs/tools.md`, runtime settings in `docs/configuration.md`.
+   Client examples were checked against official documentation. No dependencies.
+   Verification: `make check` and `make test-e2e` pass. Local documentation
+   links resolve, JSON/TOML examples parse, shell examples pass `bash -n`,
+   README tool names match registration, and `git diff --check` passes.

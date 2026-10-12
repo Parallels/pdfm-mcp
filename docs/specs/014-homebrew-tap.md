@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Implemented (local verification complete 2026-10-09; first tap publish pending tap repo + release owner) |
+| Status | Implemented (local verification complete 2026-10-09; tap repo created 2026-10-12; first stable cask publish pending release owner) |
 | Audience | Implementing agents / engineers, release owner |
 | Scope | A dedicated tap repository, the GoReleaser `homebrew_casks` block, token/permissions, tap CI, install/upgrade/uninstall docs, MCP client configuration notes |
 | Depends on | Spec 013 (signed, notarized universal macOS archive on a GitHub Release) |
@@ -191,3 +191,20 @@ claude mcp add pdfm-mcp -- "$(brew --prefix)/bin/pdfm-mcp"
 - `desc` shortened to <80 characters (Homebrew's limit; the draft's 98-char description failed `brew style`/`audit`).
 - Homebrew strips the `homebrew-` prefix from tap *names*: the repo is `Parallels/homebrew-tap` but the tap is `Parallels/tap` (verified locally). A freshly cloned tap needs `brew trust <owner>/tap` before audit (Homebrew 4.x untrusted-tap guard; non-interactive).
 - The `license` stanza is omitted from the generated cask while `license` holds the Legal placeholder: GoReleaser renders it only for a known SPDX id.
+
+### Tap bootstrap (2026-10-12)
+
+- Created public `Parallels/homebrew-tap`, checked out locally at
+  `/Users/cjlapao/code/GitHub/homebrew-tap`, with README, the existing MIT
+  license, `Casks/.gitkeep`, and macOS style/strict online audit CI.
+- Only `v0.1.0-canary.1` is published; no stable release exists. The tap
+  deliberately contains no installable cask until stable publication.
+- Replaced the publisher bot-email placeholder with the GitHub Actions
+  noreply identity and ensure `Casks/` exists before copying the artifact.
+- `PUBLISH_HOMEBREW` is already true. Listing the protected release environment
+  secrets returned 404; token availability remains unverified. The token must
+  grant Contents read/write on the new tap. No credentials were created or copied.
+- Verification: public `brew tap Parallels/tap` succeeds; tap bootstrap CI
+  passes (run 38218933755). `make check`, `make test-e2e`, workflow
+  `actionlint`, and `git diff --check` pass. Stable install/audit remains
+  pending an actual stable archive and generated cask.

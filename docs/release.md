@@ -230,7 +230,7 @@ Every `<...>` placeholder and unverified assumption:
 | --- | --- | --- |
 | Apple Developer team, Developer ID cert, notary API key, the five `MACOS_*` secrets, `release` environment with reviewers | GitHub | IT / Security |
 | MIT `LICENSE` added as an interim choice; Legal to confirm the license and copyright holder line | `LICENSE`, `.goreleaser.yaml`, `packaging/mcpb/manifest.json.tmpl` | Legal |
-| Tap repo `Parallels/homebrew-tap` creation, bot email `<bot-email>`, `HOMEBREW_TAP_TOKEN`, `PUBLISH_HOMEBREW` | `release.yml` `tap` job, `.goreleaser.yaml` | release owner |
+| Tap repo `Parallels/homebrew-tap` created; verify `HOMEBREW_TAP_TOKEN` access and publish the first stable cask (`PUBLISH_HOMEBREW` is enabled) | `release.yml` `tap` job, `.goreleaser.yaml` | release owner |
 | Brand-approved `packaging/mcpb/icon.png` (512x512). A neutral placeholder is committed so dev builds work; replace before a public release | packaging | brand/Legal |
 | Registry: GitHub OIDC, name `io.github.Parallels/pdfm-mcp` (confirm owner casing with `mcp-publisher validate`), set `MCP_SERVER_NAME`, `PUBLISH_PUBLIC` approval; keep `mcp-publisher` >= 1.7.9 | repo vars, spec 016 | owner + Legal |
 | `mcp-publisher` pin: v1.8.1 verified as the candidate (2026-10-09; linux amd64 sha256 in the official `registry_1.8.1_checksums.txt`, recorded in `release.yml`); a human must review and paste the values into the `registry` job env | `release.yml` `registry` job env | release owner |
