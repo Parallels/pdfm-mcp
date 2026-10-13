@@ -131,6 +131,12 @@ func toolTable(mode tools.PowerMode, observeRec ocr.Recognizer) []toolEntry {
 		{"parallels_vm_delete", func(s *mcp.Server) { tools.RegisterParallelsVMDelete(s, mode) }},
 		// VM cloning (source untouched, confirm-free).
 		{"parallels_vm_clone", func(s *mcp.Server) { tools.RegisterParallelsVMClone(s, mode) }},
+		// VM configuration (curated prlctl set fields, spec 027).
+		{"parallels_vm_set", func(s *mcp.Server) { tools.RegisterParallelsVMSet(s, mode) }},
+		// VM device management (add / modify / remove devices, spec 028).
+		{"parallels_vm_device_add", func(s *mcp.Server) { tools.RegisterParallelsVMDeviceAdd(s, mode) }},
+		{"parallels_vm_device_set", func(s *mcp.Server) { tools.RegisterParallelsVMDeviceSet(s, mode) }},
+		{"parallels_vm_device_del", func(s *mcp.Server) { tools.RegisterParallelsVMDeviceDel(s, mode) }},
 		// VM encryption lifecycle (password via stdin, never logged).
 		{"parallels_vm_encrypt", func(s *mcp.Server) { tools.RegisterParallelsVMEncrypt(s, mode) }},
 		{"parallels_vm_decrypt", func(s *mcp.Server) { tools.RegisterParallelsVMDecrypt(s, mode) }},

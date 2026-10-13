@@ -20,6 +20,9 @@ go.work.sum
 !.vscode/settings.json
 !.vscode/extensions.json
 
+# Local demo material (live demo + blog prep, internal only)
+/demo/
+
 # Local logs and secrets
 *.log
 .env

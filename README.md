@@ -155,6 +155,10 @@ By default, your assistant can work with all local VMs. Tools that target a VM a
 | `parallels_vm_snapshot_create`, `parallels_vm_snapshot_list` | Create checkpoints and browse a VM's snapshots. |
 | `parallels_vm_snapshot_switch`, `parallels_vm_snapshot_delete` | Restore a checkpoint or delete a snapshot. |
 | `parallels_vm_clone` | Create a copy of a VM. |
+| `parallels_vm_set` | Change a VM's configuration (CPU, memory, boot, sharing, security and more — see the tool's own field descriptions). |
+| `parallels_vm_device_add` | Add a device (hard drive, optical drive, network adapter, serial/parallel port, sound card, USB support). |
+| `parallels_vm_device_set` | Modify, enable/disable or hot connect/disconnect an existing device. |
+| `parallels_vm_device_del` | Remove a device; optionally destroy a virtual hard-drive image (confirmation-gated). |
 | `parallels_vm_delete` | Permanently delete a VM and its files; requires explicit confirmation. |
 | `parallels_vm_reclaim_disk` | Estimate or reclaim unused VM disk space. |
 | `parallels_vm_encrypt`, `parallels_vm_decrypt`, `parallels_vm_change_encryption_password` | Manage VM encryption and its password. |

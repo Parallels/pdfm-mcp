@@ -42,6 +42,177 @@ type VMRawResult struct {
 	Refreshed bool
 }
 
+// VMSharedFolderAdd is one shared-folder addition for VMSet
+// (prlctl set --shf-host-add). Name and Path are required and pre-
+// validated; Mode is "" or "ro"/"rw" ("" → prlctl default rw);
+// Description is optional; Enable is nil (prlctl default: enabled),
+// true (--enable) or false (--disable).
+type VMSharedFolderAdd struct {
+	Name        string
+	Path        string
+	Mode        string
+	Description string
+	Enable      *bool
+}
+
+// VMSetOptions is the curated `prlctl set` field set (spec 027). Every
+// field is a pointer (or an enum string where "" means unset) so the
+// service can tell "not provided" from a zero value. The tool layer
+// already bounds the input; the service re-validates everything because
+// tool arguments are untrusted.
+type VMSetOptions struct {
+	Name                 *string // 1-256 printable ASCII, unquote-tolerant
+	Description          *string // 1-256 printable ASCII, unquote-tolerant
+	CPUs                 *int    // 1-128
+	MemSizeMB            *int    // 16-131072
+	VideoSizeMB          *int    // 2-8192
+	ThreeDAccelerate     *string // off|highest|dx9
+	VerticalSync         *bool
+	HighResolution       *bool
+	EFIBoot              *bool
+	SelectBootDevice     *bool
+	Autostart            *string // off|open-window|start-app|start-host|user-login
+	AutostartDelaySecs   *int    // 0-86400
+	Autostop             *string // stop|suspend|shutdown
+	StartupView          *string // same|window|coherence|fullscreen|modality|headless
+	OnShutdown           *string // window|close|quit
+	OnWindowClose        *string // suspend|shutdown|stop|ask|keep-running
+	FasterVM             *bool
+	AutoCompress         *bool
+	NestedVirt           *bool
+	SmartMount           *bool
+	SharedClipboard      *string // on|host-to-guest|guest-to-host|off
+	ShfHost              *bool
+	FolderAdd            *VMSharedFolderAdd
+	FolderRemove         *string // shared folder name, 1-256 printable
+	FolderSet            *VMSharedFolderAdd
+	TPM                  *string // on|off|crb|tis
+	TimeSync             *bool
+	LockOnSuspend        *bool
+	SmartGuard           *bool
+	SgNotifyBeforeCreate *bool
+	SgIntervalSecs       *int // 1-2592000
+	SgMaxSnapshots       *int // 1-32
+	IsolateVM            *bool
+}
+
+// VMSetResult is the outcome of a VMSet call.
+type VMSetResult struct {
+	Output  string   // prlctl stdout, trimmed (usually empty on success)
+	Applied []string // human-readable settings that were sent, e.g. "cpus=8"
+}
+
+// VMDeviceAddOptions is the curated `prlctl set --device-add` option set
+// (spec 028). Type is required; every other field is a pointer (or an
+// enum string where "" means unset) so the service can tell "not
+// provided" from a zero value. Each field applies only to the device
+// type(s) noted in its comment; the service enforces that mapping. The
+// tool layer already bounds the input; the service re-validates
+// everything because tool arguments are untrusted.
+type VMDeviceAddOptions struct {
+	Type string // required: hdd|cdrom|net|fdd|serial|parallel|sound|usb
+
+	// Virtual and physical disk / optical (hdd, cdrom, fdd).
+	Image         *string // 1-1024 printable; required for fdd; omitted for hdd = prlctl auto-creates harddiskN.hdd
+	DiskType      *string // hdd: expand|plain
+	SizeMB        *int    // hdd: 1-33554432
+	Split         *bool   // hdd
+	Iface         *string // hdd, cdrom: ide|scsi|sata
+	Position      *int    // hdd, cdrom: 0-3 (ide) / 0-6 (scsi) / 0-5 (sata)
+	Subtype       *string // hdd, cdrom: buslogic|lsi-spi|lsi-sas
+	OnlineCompact *bool   // hdd
+
+	// Physical passthrough (hdd, cdrom) and host ports (serial, parallel).
+	HostDevice  *string // 1-1024 printable; host name from prlsrvctl
+	Passthrough *bool   // hdd, cdrom (with HostDevice)
+
+	// Network adapter (net).
+	NetType      *string // shared|bridged|host-only; required for net
+	NetIface     *string // bridged/host-only: host interface name
+	Mac          *string // "auto" or aa:bb:cc:dd:ee:ff
+	IPAdd        *string // IP or IP/mask
+	IPDel        *string
+	DHCP         *bool
+	DHCP6        *bool
+	GW           *string // IP
+	GW6          *string
+	Nameserver   *string // IP
+	SearchDomain *string // 1-256 printable
+	Configure    *bool
+	ApplyIPOnly  *bool
+	AdapterType  *string // virtio|e1000|e1000e|rtl
+
+	// Serial / parallel ports.
+	Output     *string // 1-1024 printable file for port output
+	Socket     *string // serial
+	SocketMode *string // serial (with Socket): server|client
+
+	// Sound card (sound): both required together.
+	SoundOutput *string // 1-1024 printable
+	SoundInput  *string
+}
+
+// VMDeviceSetOptions is the curated `prlctl set --device-set` option set
+// (spec 028). DeviceName is required; Enabled and Connected are mutually
+// exclusive; at least one of them or a configuration field must be set
+// (enforced in the service). The configuration fields are the add set
+// minus Type and Passthrough; each applies only to the device type
+// identified by DeviceName's prefix (host_device survives for the ports).
+type VMDeviceSetOptions struct {
+	DeviceName string // required: hdd0, cdrom0, net0, fdd0, serial0, parallel0, sound0
+	Enabled    *bool  // --enable / --disable
+	Connected  *bool  // --connect / --disconnect; requires a running VM
+
+	Image         *string
+	DiskType      *string
+	SizeMB        *int
+	Split         *bool
+	Iface         *string
+	Position      *int
+	Subtype       *string
+	OnlineCompact *bool
+	HostDevice    *string // serial, parallel only
+	Recreate      *bool
+	NetType       *string
+	NetIface      *string
+	Mac           *string
+	IPAdd         *string
+	IPDel         *string
+	DHCP          *bool
+	DHCP6         *bool
+	GW            *string
+	GW6           *string
+	Nameserver    *string
+	SearchDomain  *string
+	Configure     *bool
+	ApplyIPOnly   *bool
+	AdapterType   *string
+	Output        *string
+	Socket        *string
+	SocketMode    *string
+	SoundOutput   *string
+	SoundInput    *string
+}
+
+// VMDeviceDelOptions is the curated `prlctl set --device-del` option set
+// (spec 028). DeviceName is required (an indexed device name or the bare
+// keyword "usb"). ImageAction selects the virtual-HDD disk-image policy:
+// detach_only (default, image preserved), destroy_image, or
+// destroy_image_force (also from all snapshots). The two destroy modes
+// require Confirm to equal DeviceName exactly (the spec-008 confirm
+// gate); Confirm is ignored for detach_only.
+type VMDeviceDelOptions struct {
+	DeviceName  string
+	ImageAction string // detach_only|destroy_image|destroy_image_force
+	Confirm     string
+}
+
+// VMDeviceResult is the outcome of a device operation call.
+type VMDeviceResult struct {
+	Output  string   // prlctl stdout, trimmed (usually empty on success)
+	Applied []string // human-readable settings that were sent
+}
+
 // CaptureResult is the outcome of a Capture call.
 type CaptureResult struct {
 	PNG        []byte    // the exact PNG written by prlctl
@@ -221,6 +392,50 @@ type ParallelsService interface {
 	// PowerStop. On success the VM cache is invalidated. It returns
 	// prlctl's stdout (usually empty on success).
 	Power(ctx context.Context, op PowerOp, vmRef string, kill, dropState bool) (string, error)
+
+	// VMSet changes the VM's configuration (prlctl set) using the curated
+	// option set in opts. Every provided field is re-validated here
+	// (untrusted input): ranges, closed enum sets, printable-charset and
+	// length bounds, with one surrounding quote pair tolerated on names
+	// (spec 025). The flags are appended in a fixed order as single argv
+	// elements and prlctl is the authority on state/flag preconditions —
+	// its error is returned verbatim (no pre-checks). At least one field
+	// must be set. On success the VM list cache is invalidated.
+	VMSet(ctx context.Context, vmRef string, opts VMSetOptions) (VMSetResult, error)
+
+	// VMDeviceAdd adds a device to the VM identified by vmRef (id or
+	// name, pre-validated) via `prlctl set <ref> --device-add <type> …`.
+	// Every provided field is re-validated here (untrusted input):
+	// ranges, closed enum sets, printable-charset and length bounds,
+	// MAC/IP formats, and the cross-field rule that each field belongs
+	// to a specific device type. The flags are appended in a fixed order
+	// as single argv elements and prlctl is the authority on
+	// state/VM-type preconditions (stopped VM, macOS-VM unsupported
+	// adds) — its error is returned verbatim. On success the VM list
+	// cache is invalidated.
+	VMDeviceAdd(ctx context.Context, vmRef string, opts VMDeviceAddOptions) (VMDeviceResult, error)
+
+	// VMDeviceSet modifies or toggles an existing device of the VM
+	// identified by vmRef (id or name, pre-validated) via
+	// `prlctl set <ref> --device-set <name> …`. Enabled and Connected are
+	// mutually exclusive; at least one of them or a configuration field
+	// is required. The device-name prefix identifies the device type and
+	// configuration fields are rejected when they do not belong to it;
+	// unknown prefixes pass through to prlctl. prlctl is the authority
+	// on state preconditions (config changes need a stopped VM,
+	// connect/disconnect a running one) — its error is returned
+	// verbatim. On success the VM list cache is invalidated.
+	VMDeviceSet(ctx context.Context, vmRef string, opts VMDeviceSetOptions) (VMDeviceResult, error)
+
+	// VMDeviceDel removes a device from the VM identified by vmRef (id
+	// or name, pre-validated) via `prlctl set <ref> --device-del <name> …`.
+	// ImageAction selects the virtual-HDD disk-image policy (detach_only
+	// default, destroy_image, destroy_image_force); the two destroy
+	// modes require Confirm to equal DeviceName exactly (the spec-008
+	// confirm gate). prlctl is the authority on state preconditions —
+	// its error is returned verbatim. On success the VM list cache is
+	// invalidated.
+	VMDeviceDel(ctx context.Context, vmRef string, opts VMDeviceDelOptions) (VMDeviceResult, error)
 
 	// Encrypt encrypts the VM identified by vmRef (id or name,
 	// pre-validated) and all of its data behind password, or — when

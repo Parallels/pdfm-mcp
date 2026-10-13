@@ -64,6 +64,20 @@ func RegisterSteps(reg *orchestrator.Registry) {
 		"parallels_vm_reclaim_disk", descVMReclaimDisk, true,
 		powerInputSchema[VMReclaimDiskInput](PowerVM), VMReclaimDisk))
 
+	reg.Register(orchestrator.FromHandler[VMSetInput, VMSetOutput](
+		"parallels_vm_set", descVMSet, true,
+		powerInputSchema[VMSetInput](PowerVM), VMSet))
+
+	reg.Register(orchestrator.FromHandler[VMDeviceAddInput, VMDeviceOutput](
+		"parallels_vm_device_add", descVMDeviceAdd, true,
+		powerInputSchema[VMDeviceAddInput](PowerVM), VMDeviceAdd))
+	reg.Register(orchestrator.FromHandler[VMDeviceSetInput, VMDeviceOutput](
+		"parallels_vm_device_set", descVMDeviceSet, true,
+		powerInputSchema[VMDeviceSetInput](PowerVM), VMDeviceSet))
+	reg.Register(orchestrator.FromHandler[VMDeviceDelInput, VMDeviceOutput](
+		"parallels_vm_device_del", descVMDeviceDel, true,
+		powerInputSchema[VMDeviceDelInput](PowerVM), VMDeviceDel))
+
 	reg.Register(orchestrator.FromHandler[VMCreateSnapshotInput, VMCreateSnapshotOutput](
 		"parallels_vm_snapshot_create", descVMSnapshotCreate, true,
 		powerInputSchema[VMCreateSnapshotInput](PowerVM), VMCreateSnapshot))

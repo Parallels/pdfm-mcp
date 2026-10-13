@@ -24,6 +24,9 @@ const (
 	ClassPower Class = "power"
 	// ClassExec tools run arbitrary commands inside a guest.
 	ClassExec Class = "exec"
+	// ClassWrite tools change VM configuration (prlctl set): recoverable
+	// settings edits, not power transitions and not destructive.
+	ClassWrite Class = "write"
 	// ClassDestructive tools can lose data or are irreversible. Unknown
 	// tools are classified here (fail closed).
 	ClassDestructive Class = "destructive"
@@ -47,29 +50,34 @@ const SequenceTool = "parallels_vm_sequence"
 // its harmful mode.
 var classes = map[string]Class{
 	// Fleet / observation.
-	"parallels_list_vms":                      ClassRead,
-	"parallels_search_vms":                    ClassRead,
-	"parallels_vm_info":                       ClassRead,
-	"parallels_vm_capture":                    ClassRead,
-	"parallels_vm_observe":                    ClassRead,
-	"parallels_vm_exec_result":                ClassRead,
-	"parallels_vm_snapshot_list":              ClassRead,
-	"parallels_vm_sequence":                   ClassSequence,
-	"parallels_vm_start":                      ClassPower,
-	"parallels_vm_resume":                     ClassPower,
-	"parallels_vm_pause":                      ClassPower,
-	"parallels_vm_suspend":                    ClassPower,
-	"parallels_vm_restart":                    ClassPower,
-	"parallels_vm_reset":                      ClassPower,
-	"parallels_vm_reset_uptime":               ClassPower,
-	"parallels_vm_stop":                       ClassPower,
-	"parallels_vm_clone":                      ClassPower,
-	"parallels_vm_snapshot_create":            ClassPower,
-	"parallels_vm_exec":                       ClassExec,
-	"parallels_vm_exec_start":                 ClassExec,
-	"parallels_vm_exec_cancel":                ClassExec,
-	"parallels_vm_send_key":                   ClassInput,
-	"parallels_vm_type":                       ClassInput,
+	"parallels_list_vms":           ClassRead,
+	"parallels_search_vms":         ClassRead,
+	"parallels_vm_info":            ClassRead,
+	"parallels_vm_capture":         ClassRead,
+	"parallels_vm_observe":         ClassRead,
+	"parallels_vm_exec_result":     ClassRead,
+	"parallels_vm_snapshot_list":   ClassRead,
+	"parallels_vm_sequence":        ClassSequence,
+	"parallels_vm_start":           ClassPower,
+	"parallels_vm_resume":          ClassPower,
+	"parallels_vm_pause":           ClassPower,
+	"parallels_vm_suspend":         ClassPower,
+	"parallels_vm_restart":         ClassPower,
+	"parallels_vm_reset":           ClassPower,
+	"parallels_vm_reset_uptime":    ClassPower,
+	"parallels_vm_stop":            ClassPower,
+	"parallels_vm_clone":           ClassPower,
+	"parallels_vm_snapshot_create": ClassPower,
+	"parallels_vm_exec":            ClassExec,
+	"parallels_vm_exec_start":      ClassExec,
+	"parallels_vm_exec_cancel":     ClassExec,
+	"parallels_vm_send_key":        ClassInput,
+	"parallels_vm_type":            ClassInput,
+	"parallels_vm_set":             ClassWrite,
+	"parallels_vm_device_add":      ClassWrite,
+	"parallels_vm_device_set":      ClassWrite,
+	// del can destroy virtual-HDD disk images (harmful-mode rule).
+	"parallels_vm_device_del":                 ClassDestructive,
 	"parallels_vm_delete":                     ClassDestructive,
 	"parallels_vm_reclaim_disk":               ClassDestructive,
 	"parallels_vm_snapshot_delete":            ClassDestructive,

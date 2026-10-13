@@ -76,7 +76,7 @@ func Load(args []string, stderr io.Writer) (Config, error) {
 	fs.BoolVar(&cfg.ShowVersion, "version", false, "print version and exit")
 	fs.StringVar(&levelStr, "log-level", levelStr, "log level: debug|info|warn|error")
 	fs.StringVar(&vmID, "vm-id", vmID, "Parallels VM id or name to target (empty = all VMs)")
-	fs.BoolVar(&readOnly, "read-only", readOnly, "expose only read-class tools (no power, input, exec, destructive or secret tools)")
+	fs.BoolVar(&readOnly, "read-only", readOnly, "expose only read-class tools (no power, input, exec, write, destructive or secret tools)")
 	fs.StringVar(&allowTools, "allow-tools", allowTools, "comma-separated tool names or prefix globs (trailing *); when set, only these tools are exposed")
 	fs.StringVar(&denyTools, "deny-tools", denyTools, "comma-separated tool names or prefix globs (trailing *) to hide; wins over --allow-tools")
 	fs.StringVar(&allowVMs, "allow-vms", allowVMs, "comma-separated VM ids or names the tools may address (empty = all VMs)")
