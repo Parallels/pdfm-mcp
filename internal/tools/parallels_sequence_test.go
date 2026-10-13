@@ -230,8 +230,11 @@ func TestSequenceListedAndModeContract(t *testing.T) {
 	if !strings.Contains(seq.Description, "parallels_vm_start()") {
 		t.Fatalf("description must show arg-less tools with empty parens: %s", seq.Description)
 	}
-	if len(seq.Description) >= 3072 {
-		t.Fatalf("description is %d bytes, want < 3072", len(seq.Description))
+	// Budget raised 3072 → 4096 by spec 028: the three device tools
+	// (device_add / device_set / device_del) list their full field sets as
+	// step signatures, growing the generated description by ~600 bytes.
+	if len(seq.Description) >= 4096 {
+		t.Fatalf("description is %d bytes, want < 4096", len(seq.Description))
 	}
 
 	// Fleet mode: vm_id is required.
@@ -544,8 +547,9 @@ func TestSequenceDriftGuard(t *testing.T) {
 			t.Fatalf("step %s is registered but not listed as a tool (drift)", name)
 		}
 	}
-	if len(stepNames) != 22 {
-		t.Fatalf("registry has %d actions, want 22: %v", len(stepNames), reg.Names())
+	// 26 steps: 23 pre-spec-028 + the three device tools.
+	if len(stepNames) != 26 {
+		t.Fatalf("registry has %d actions, want 26: %v", len(stepNames), reg.Names())
 	}
 }
 

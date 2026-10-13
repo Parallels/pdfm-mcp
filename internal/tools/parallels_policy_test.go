@@ -63,7 +63,7 @@ func TestEveryRegisteredToolIsClassified(t *testing.T) {
 	srv := policyServer(t, &testRunner{fn: powerListFn()}, testConfig())
 	for name := range toolNames(t, srv) {
 		if !policy.Known(name) {
-			t.Errorf("tool %q is registered but missing from the classification table in internal/policy/policy.go: add it with the right class (read/input/power/exec/destructive/secret). Unclassified tools are treated as destructive.", name)
+			t.Errorf("tool %q is registered but missing from the classification table in internal/policy/policy.go: add it with the right class (read/input/power/exec/write/destructive/secret). Unclassified tools are treated as destructive.", name)
 		}
 	}
 }

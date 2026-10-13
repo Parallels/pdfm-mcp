@@ -158,6 +158,18 @@ func TestParallelsGating(t *testing.T) {
 	if !names["parallels_vm_clone"] {
 		t.Fatalf("fleet mode: parallels_vm_clone not listed: %v", names)
 	}
+	// Configuration is listed too; never executed here — a real run would
+	// reconfigure a real VM (opt-in QA only).
+	if !names["parallels_vm_set"] {
+		t.Fatalf("fleet mode: parallels_vm_set not listed: %v", names)
+	}
+	// Device management is listed too; also never executed here — a real
+	// run would attach/remove a device on a real VM (manual QA only).
+	for _, p := range []string{"parallels_vm_device_add", "parallels_vm_device_set", "parallels_vm_device_del"} {
+		if !names[p] {
+			t.Fatalf("fleet mode: %s not listed: %v", p, names)
+		}
+	}
 	// The encryption lifecycle is listed too. Only the non-mutating
 	// dry-run precondition checks execute below (default-on); real
 	// encrypt/decrypt/change-password never run here — they are
@@ -410,6 +422,14 @@ func TestParallelsGating(t *testing.T) {
 	}
 	if !vmNames["parallels_vm_clone"] {
 		t.Fatalf("vm mode: parallels_vm_clone not listed: %v", vmNames)
+	}
+	if !vmNames["parallels_vm_set"] {
+		t.Fatalf("vm mode: parallels_vm_set not listed: %v", vmNames)
+	}
+	for _, p := range []string{"parallels_vm_device_add", "parallels_vm_device_set", "parallels_vm_device_del"} {
+		if !vmNames[p] {
+			t.Fatalf("vm mode: %s not listed: %v", p, vmNames)
+		}
 	}
 	if !vmNames["parallels_vm_sequence"] {
 		t.Fatalf("vm mode: parallels_vm_sequence not listed: %v", vmNames)
