@@ -2,6 +2,14 @@
 
 Release PRs collect merged changes for review before production publication.
 
+## [0.1.2] - 2026-10-13
+
+- test: add tests for VMDeviceAddHandler modes and fields
+- test: add tests for VMDeviceSetHandler and validation
+- test: add tests for VMDeviceDelHandler and confirmation gate
+- test: add tests for VMSetHandler modes and validation
+- test: add tests for VMSetHandler new fields and service validation
+
 ## [0.1.1] - 2026-10-12
 
 - wip (#1)
