@@ -174,7 +174,7 @@ func TestExecElevatedReachesArgvWithoutIdentityFlags(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, args = runner.lastCall()
-	if want := []string{"exec", "guest-x", "--resolve-paths", "cat /host/f"}; !slices.Equal(args, want) {
+	if want := []string{"exec", "guest-x", "--resolve-paths", "cat", "/host/f"}; !slices.Equal(args, want) {
 		t.Fatalf("args = %v, want %v", args, want)
 	}
 }
@@ -241,7 +241,7 @@ func TestExecJobsProtocolFleet(t *testing.T) {
 		t.Fatalf("start = %v", sc)
 	}
 	_, args := runner.lastCall()
-	if want := []string{"exec", "guest-x", "make build"}; !slices.Equal(args, want) {
+	if want := []string{"exec", "guest-x", "make", "build"}; !slices.Equal(args, want) {
 		t.Fatalf("argv = %v, want %v", args, want)
 	}
 

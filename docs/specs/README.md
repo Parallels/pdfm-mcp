@@ -1,7 +1,7 @@
 # Specs
 
 | # | Title | Status |
-|---|-------|--------|
+| --- | ------- | -------- |
 | [001](001-project-scaffold.md) | Project scaffold (Go MCP over stdio, Makefile, VS Code debugging, greeter) | Implemented (user README and contributor guide reorganized 2026-10-12) |
 | [002](002-parallels-desktop-module.md) | Parallels Desktop module (detection gate, `--vm-id` targeting, in-memory VM cache, list/info tools) | Implemented |
 | [003](003-parallels-power-operations.md) | Parallels power operations (start/resume/pause/suspend/restart/reset/reset-uptime/stop tools, per-mode target resolution, 180s power timeout, cache invalidation) | Implemented |
@@ -30,3 +30,4 @@
  | [026](026-vm-search.md) | `parallels_search_vms`: compact VM lookup by case-insensitive substring of name/UUID (+ optional state filter, ranked results, limit) so lower-capability models can locate a VM without ingesting the full, client-truncated `parallels_list_vms` output | Implemented |
   | [027](027-vm-set.md) | `parallels_vm_set`: curated VM configuration tool — `prlctl set` exposed as 24 self-documenting, individually validated fields (hardware, boot, sharing incl. shared folders, security) with a new `write` policy class; 100+ remaining prlctl options deliberately excluded with reasons | Implemented |
   | [028](028-vm-device-management.md) | `parallels_vm_device_add` / `parallels_vm_device_set` / `parallels_vm_device_del`: the `prlctl set --device-add/set/del` surface — add/modify/remove hard drives, optical drives, network adapters, serial/parallel ports, sound cards and USB support; connect/disconnect folded into set; destructive image destroy is confirmation-gated | Implemented (live QA 40/40 on disposable VM with full revert) |
+  | [029](029-exec-command-line.md) | Exec command-line tokenization for all guest OSes: `command` split into program + arguments (quotes group, backslash escapes whitespace/quotes, Windows paths safe), no-shell semantics documented in the schemas, `user` password-prompt failure (exit 255) documented; fixes the Windows exit-2 field report for multi-argument commands | Implemented (unit + e2e; live guest verification pending) |

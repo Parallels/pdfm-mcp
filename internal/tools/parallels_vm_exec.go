@@ -11,8 +11,8 @@ import (
 // ExecInput is the argument schema of parallels_vm_exec.
 type ExecInput struct {
 	VMID         string `json:"vm_id,omitempty" jsonschema:"VM id or name to run the command in: the VM's UUID (the ID field) or its exact display name (the Name field) as returned by parallels_list_vms; pass the name exactly as shown (spaces are fine, no quotes needed)"`
-	Command      string `json:"command" jsonschema:"command line to execute in the guest (Linux guests: bash -c), max 4096 characters"`
-	User         string `json:"user,omitempty" jsonschema:"guest user to run as; defaults to the user currently logged in inside the guest; mutually exclusive with elevated"`
+	Command      string `json:"command" jsonschema:"guest command line (max 4096 chars): split on unquoted whitespace into program + arguments (single/double quotes group; a backslash escapes a following space or quote, so Windows paths are safe). No shell is started in the guest, so pipes, &&, redirects, globs and $variables are not interpreted — to use them, run a shell explicitly: Linux/macOS sh -c \"...\", Windows cmd /c \"...\" or powershell -NoProfile -Command \"...\""`
+	User         string `json:"user,omitempty" jsonschema:"guest user to run as; defaults to the user currently logged in in the guest. Requires that user's password, which this tool cannot provide: prlctl prompts for it on the terminal, so the call fails with exit_code 255 (Unable to authenticate the user) unless the account has no password — the typical outcome on Windows guests. Mutually exclusive with elevated"`
 	Elevated     bool   `json:"elevated,omitempty" jsonschema:"PRIVILEGED: run as the guest system account (root on Linux/macOS, SYSTEM on Windows) instead of the logged-in user; mutually exclusive with user"`
 	ResolvePaths bool   `json:"resolve_paths,omitempty" jsonschema:"convert host paths in the command to guest paths"`
 }

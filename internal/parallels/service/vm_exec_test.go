@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -17,10 +18,14 @@ func TestExecArgvShapes(t *testing.T) {
 		resolvePaths bool
 		wantArgs     []string
 	}{
-		{"default current-user", "ls -la", "", false, []string{"exec", "guest-x", "--current-user", "ls -la"}},
+		{"default current-user", "ls -la", "", false, []string{"exec", "guest-x", "--current-user", "ls", "-la"}},
 		{"user override", "id", "root", false, []string{"exec", "guest-x", "--user", "root", "id"}},
-		{"resolve paths", "cat /host/file", "", true, []string{"exec", "guest-x", "--current-user", "--resolve-paths", "cat /host/file"}},
+		{"resolve paths", "cat /host/file", "", true, []string{"exec", "guest-x", "--current-user", "--resolve-paths", "cat", "/host/file"}},
 		{"all options", "run", "builder", true, []string{"exec", "guest-x", "--user", "builder", "--resolve-paths", "run"}},
+		// spec 029: the command line is split into program + arguments.
+		{"windows multi-arg command", "cmd /c ver", "", false, []string{"exec", "guest-x", "--current-user", "cmd", "/c", "ver"}},
+		{"quoted payload stays one element", `sh -c "echo a && echo b"`, "", false, []string{"exec", "guest-x", "--current-user", "sh", "-c", "echo a && echo b"}},
+		{"windows path keeps backslashes", `C:\Windows\System32\whoami.exe`, "", false, []string{"exec", "guest-x", "--current-user", `C:\Windows\System32\whoami.exe`}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -40,6 +45,62 @@ func TestExecArgvShapes(t *testing.T) {
 				if args[i] != tc.wantArgs[i] {
 					t.Fatalf("args = %v, want %v", args, tc.wantArgs)
 				}
+			}
+		})
+	}
+}
+
+func TestSplitCommandLine(t *testing.T) {
+	okCases := []struct {
+		name string
+		in   string
+		want []string
+	}{
+		{"single token", "whoami", []string{"whoami"}},
+		{"simple args", "ls -la", []string{"ls", "-la"}},
+		{"windows command", "cmd /c ver", []string{"cmd", "/c", "ver"}},
+		{"powershell env var", `powershell -NoProfile -Command "$env:USERNAME"`, []string{"powershell", "-NoProfile", "-Command", "$env:USERNAME"}},
+		{"windows path is one element", `C:\Windows\System32\whoami.exe`, []string{`C:\Windows\System32\whoami.exe`}},
+		{"windows path with dir", `dir C:\Users\me\docs`, []string{"dir", `C:\Users\me\docs`}},
+		{"double-quoted payload", `sh -c "echo a && echo b"`, []string{"sh", "-c", "echo a && echo b"}},
+		{"single-quoted payload", `powershell -Command 'Get-Process'`, []string{"powershell", "-Command", "Get-Process"}},
+		{"quotes mid-command", `echo "a b" c`, []string{"echo", "a b", "c"}},
+		{"adjacent quoted sections", `echo "hi""there"`, []string{"echo", "hithere"}},
+		{"empty quoted arg", `echo ""`, []string{"echo", ""}},
+		{"two empty quoted args", `echo "" ""`, []string{"echo", "", ""}},
+		{"escaped space", `echo a\ b`, []string{"echo", "a b"}},
+		{"escaped quote in quotes", `echo "a\"b"`, []string{"echo", `a"b`}},
+		{"escaped backslash in quotes", `echo "a\\"`, []string{"echo", `a\`}},
+		{"backslash before plain char literal", `echo a\b`, []string{"echo", `a\b`}},
+		{"tab and multiple spaces", "ls   -la\t/tmp", []string{"ls", "-la", "/tmp"}},
+		{"leading and trailing spaces", "  uname -a  ", []string{"uname", "-a"}},
+	}
+	for _, tc := range okCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := splitCommandLine(tc.in)
+			if err != nil {
+				t.Fatalf("splitCommandLine(%q) error = %v", tc.in, err)
+			}
+			if !slices.Equal(got, tc.want) {
+				t.Fatalf("splitCommandLine(%q) = %q, want %q", tc.in, got, tc.want)
+			}
+		})
+	}
+
+	errCases := []struct {
+		name     string
+		in       string
+		wantPart string
+	}{
+		{"unterminated double quote", `echo "unclosed`, "unterminated quote"},
+		{"unterminated single quote", `echo 'unclosed`, "unterminated quote"},
+		{"invalid utf-8", "echo \xc3\x28", "invalid UTF-8"},
+		{"all whitespace", " \t ", "empty"},
+	}
+	for _, tc := range errCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := splitCommandLine(tc.in); err == nil || !strings.Contains(err.Error(), tc.wantPart) {
+				t.Fatalf("splitCommandLine(%q) err = %v, want one containing %q", tc.in, err, tc.wantPart)
 			}
 		})
 	}
@@ -111,6 +172,8 @@ func TestExecValidationBeforeExec(t *testing.T) {
 		{"whitespace command", "guest-x", "   \n\t ", "", "empty"},
 		{"NUL in command", "guest-x", "id\x00extra", "", "NUL"},
 		{"over-long command", "guest-x", strings.Repeat("a", maxCommandLength+1), "", "limit"},
+		{"unterminated double quote", "guest-x", `echo "unclosed`, "", "unterminated quote"},
+		{"unterminated single quote", "guest-x", `echo 'unclosed`, "", "unterminated quote"},
 		{"over-long user", "guest-x", "id", strings.Repeat("u", MaxVMRefLength+1), "VM id or name"},
 	}
 	for _, tc := range cases {
