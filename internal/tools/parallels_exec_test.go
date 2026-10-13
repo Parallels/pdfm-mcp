@@ -114,7 +114,7 @@ func TestExecUserAndResolvePathsReachArgv(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, args := runner.lastCall()
-	want := []string{"exec", "guest-x", "--user", "builder", "--resolve-paths", "cat /host/file"}
+	want := []string{"exec", "guest-x", "--user", "builder", "--resolve-paths", "cat", "/host/file"}
 	if !slices.Equal(args, want) {
 		t.Fatalf("args = %v, want %v", args, want)
 	}
@@ -269,7 +269,7 @@ func TestParallelsExecVMModeProtocol(t *testing.T) {
 		t.Fatalf("tool error: %+v", res.Content)
 	}
 	_, args := runner.lastCall()
-	want := []string{"exec", vmOneID, "--current-user", "uname -a"}
+	want := []string{"exec", vmOneID, "--current-user", "uname", "-a"}
 	if !slices.Equal(args, want) {
 		t.Fatalf("args = %v, want %v", args, want)
 	}

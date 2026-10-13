@@ -317,4 +317,11 @@ unchanged; opt-in e2e run.
   required (no `omitempty`), and the old assignment clobbered it in fleet
   mode. No behaviour change for the power/capture tools (their only
   non-omitempty field is `vm_id` itself).
+- **Single-argv-element command superseded (2026-10-13, spec 029).** The
+  command is now split into program + arguments for every guest OS (a
+  single multi-word element is looked up as one executable name on Windows
+  guests → field-reported exit 2), and the "Linux guests run the command
+  via `bash -c`" assumption is dropped: no shell is started anywhere, and
+  shell semantics require an explicit `sh -c "..."` / `cmd /c "..."` /
+  `powershell -Command "..."`.
 - Otherwise as specified.

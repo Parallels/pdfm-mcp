@@ -239,7 +239,7 @@ func TestJobLifecyclePartialReadsAndSuccess(t *testing.T) {
 	if len(info.JobID) != 32 || info.TimeoutSeconds != 1800 || !info.Elevated || info.VM != "guest-x" {
 		t.Fatalf("info = %+v", info)
 	}
-	if got := reg.argv(0); !slices.Equal(got, []string{"exec", "guest-x", "make build"}) {
+	if got := reg.argv(0); !slices.Equal(got, []string{"exec", "guest-x", "make", "build"}) {
 		t.Fatalf("argv = %v", got)
 	}
 
@@ -285,7 +285,7 @@ func TestJobFailedExitCode(t *testing.T) {
 	if st.State != interfaces.JobFailed || st.ExitCode != 3 {
 		t.Fatalf("status = %+v", st)
 	}
-	if got := reg.argv(0); !slices.Equal(got, []string{"exec", "guest-x", "--current-user", "make build"}) {
+	if got := reg.argv(0); !slices.Equal(got, []string{"exec", "guest-x", "--current-user", "make", "build"}) {
 		t.Fatalf("argv = %v", got)
 	}
 }
