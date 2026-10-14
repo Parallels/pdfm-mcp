@@ -295,6 +295,9 @@ Also run the downloaded copy with the quarantine flag set (download via browser 
   and without `v`, latest stable discovery, and prerelease discovery. Release URLs
   retain the `v` tag prefix; archive names and checksum entries omit it, matching
   GoReleaser's `.Version` template. Prerelease suffixes are preserved.
+  Verified 2026-10-14: `make test-scripts`, `make check`, and `make test-e2e`
+  pass; Go/linter caches used temporary directories, and checks needing local
+  listeners or Parallels service access ran outside the sandbox.
 - **Config**: `goreleaser check` in CI; snapshot build asserts `dist/` contains the archive, `checksums.txt`, SBOM, and that the archived binary reports `--version` as `…-snapshot`.
 - **Script**: `scripts/version-check.sh` unit-tested with `bats` or a small Go/shell table (valid tags, bad tags, dirty tree).
 - **Release rehearsal**: cut `v0.0.1-rc.1` on a throwaway tag in a fork or the real repo marked pre-release; run the full verification list; delete the release afterwards.
