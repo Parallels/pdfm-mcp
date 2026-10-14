@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | Implemented (local verification complete 2026-10-09; tag rehearsal pending release owner) |
+| Status | Implemented (local verification complete 2026-10-09; installer asset version fix 2026-10-14; tag rehearsal pending release owner) |
 | Audience | Implementing agents / engineers, release owner |
 | Scope | `.goreleaser.yaml`, tag-triggered `release.yml`, macOS code signing + notarization, checksums/SBOM, Makefile targets, runbook, secrets inventory, publication gate. This is the **foundation** of specs 014 (Homebrew), 015 (MCPB), 016 (MCP Registry) |
 | Out of scope | The tap repo and cask (014), the MCPB bundle (015), registry listing (016), Linux/Windows artifacts (the product is macOS-only: Parallels Desktop for Mac) |
@@ -291,6 +291,10 @@ Also run the downloaded copy with the quarantine flag set (download via browser 
 
 ## 10. Testing
 
+- **Installer regression**: offline full-install tests cover explicit versions with
+  and without `v`, latest stable discovery, and prerelease discovery. Release URLs
+  retain the `v` tag prefix; archive names and checksum entries omit it, matching
+  GoReleaser's `.Version` template. Prerelease suffixes are preserved.
 - **Config**: `goreleaser check` in CI; snapshot build asserts `dist/` contains the archive, `checksums.txt`, SBOM, and that the archived binary reports `--version` as `…-snapshot`.
 - **Script**: `scripts/version-check.sh` unit-tested with `bats` or a small Go/shell table (valid tags, bad tags, dirty tree).
 - **Release rehearsal**: cut `v0.0.1-rc.1` on a throwaway tag in a fork or the real repo marked pre-release; run the full verification list; delete the release afterwards.

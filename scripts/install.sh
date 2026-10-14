@@ -147,7 +147,9 @@ resolve_version() {
     echo "List releases: https://github.com/${REPO}/releases" >&2
     exit 1
   fi
-  ASSET="pdfm-mcp_${VERSION}_darwin_universal.tar.gz"
+  # Release URLs use the v-prefixed tag; GoReleaser asset names use .Version
+  # without that prefix (including any prerelease suffix).
+  ASSET="pdfm-mcp_${VERSION#v}_darwin_universal.tar.gz"
 }
 
 download_release() {
