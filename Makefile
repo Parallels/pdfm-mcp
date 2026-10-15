@@ -159,9 +159,9 @@ MCPB_PIN ?=
 export MCPB_PIN
 comma := ,
 
-.PHONY: sync-codex-plugin
-sync-codex-plugin: ## Set the Codex plugin version from VERSION and validate plugin/marketplace JSON
-	./scripts/sync-codex-plugin.sh
+.PHONY: sync-plugins
+sync-plugins: ## Set plugin/extension manifest versions from VERSION and validate plugin/marketplace JSON
+	./scripts/sync-plugins.sh
 
 .PHONY: release-check
 release-check: ## Validate .goreleaser.yaml

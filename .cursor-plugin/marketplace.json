@@ -1,0 +1,13 @@
+{
+  "name": "parallels",
+  "owner": { "name": "Parallels" },
+  "metadata": { "description": "Parallels Desktop plugins for AI coding assistants" },
+  "plugins": [
+    {
+      "name": "pdfm-mcp",
+      "source": "plugins/pdfm-mcp",
+      "description": "Inspect and control Parallels Desktop virtual machines: list, power, screenshot, run guest commands, type keys, and run multi-step sequences.",
+      "category": "Developer Tools"
+    }
+  ]
+}

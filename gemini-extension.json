@@ -1,0 +1,11 @@
+{
+  "name": "pdfm-mcp",
+  "version": "0.1.3",
+  "description": "Inspect and control Parallels Desktop virtual machines: list, power, screenshot, run guest commands, type keys, and run multi-step sequences. Requires the pdfm-mcp binary on your PATH.",
+  "mcpServers": {
+    "pdfm-mcp": {
+      "command": "pdfm-mcp",
+      "args": []
+    }
+  }
+}

@@ -40,17 +40,25 @@ def bump_version(value, kind):
     raise ValueError("invalid bump type")
 
 
-PLUGIN_MANIFEST = Path("plugins/pdfm-mcp/.codex-plugin/plugin.json")
+# Manifests that carry the release version; keep in step with scripts/sync-plugins.sh.
+PLUGIN_MANIFESTS = (
+    "plugins/pdfm-mcp/.codex-plugin/plugin.json",
+    "plugins/pdfm-mcp/.claude-plugin/plugin.json",
+    "plugins/pdfm-mcp/.cursor-plugin/plugin.json",
+    "gemini-extension.json",
+)
 
 
-def sync_plugin_manifest(version_file, version):
-    """Set the Codex plugin version next to VERSION; skip when the manifest is absent."""
-    manifest = Path(version_file).resolve().parent / PLUGIN_MANIFEST
-    if not manifest.is_file():
-        return
-    data = json.loads(manifest.read_text())
-    data["version"] = version
-    manifest.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+def sync_plugin_manifests(version_file, version):
+    """Set the plugin/extension versions next to VERSION; skip manifests that are absent."""
+    base = Path(version_file).resolve().parent
+    for name in PLUGIN_MANIFESTS:
+        manifest = base / name
+        if not manifest.is_file():
+            continue
+        data = json.loads(manifest.read_text())
+        data["version"] = version
+        manifest.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 
 
 def resolve_version(base, environment=None, run_number=None, tag=None):
@@ -142,7 +150,7 @@ def main():
             version = bump_version(base, args.type)
             parse_version(version, stable=True)
             Path(args.file).write_text(version + "\n")
-            sync_plugin_manifest(args.file, version)
+            sync_plugin_manifests(args.file, version)
             values = {"version": version}
         elif args.command == "resolve":
             if args.tag is not None and args.environment is not None:

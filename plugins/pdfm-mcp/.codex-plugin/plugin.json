@@ -28,6 +28,8 @@
       "Interactive",
       "Write"
     ],
-    "websiteURL": "https://github.com/Parallels/pdfm-mcp"
+    "websiteURL": "https://github.com/Parallels/pdfm-mcp",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/logo.png"
   }
 }

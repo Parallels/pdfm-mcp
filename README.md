@@ -100,14 +100,24 @@ command = "/opt/homebrew/bin/pdfm-mcp"
 
 For the script installation or Intel Homebrew, change `command` to `/usr/local/bin/pdfm-mcp`. See the [official Codex MCP documentation](https://developers.openai.com/codex/mcp/).
 
-#### Codex plugin marketplace
+#### Plugin marketplaces
 
-This repo is also a Codex plugin marketplace. With `pdfm-mcp` installed and on your `PATH`:
+This repo is also a plugin marketplace for several assistants. Install the `pdfm-mcp` binary first and make sure it is on your `PATH`; the plugins only configure the client to launch it.
 
 ```sh
+# Codex
 codex plugin marketplace add Parallels/pdfm-mcp
 codex plugin add pdfm-mcp@parallels
+
+# Claude Code
+claude plugin marketplace add Parallels/pdfm-mcp
+claude plugin install pdfm-mcp@parallels
+
+# Gemini CLI
+gemini extensions install https://github.com/Parallels/pdfm-mcp
 ```
+
+Cursor Teams and Enterprise admins can import this repository from **Dashboard → Plugins & MCPs → Team Marketplaces**.
 
 ### Claude Desktop
 

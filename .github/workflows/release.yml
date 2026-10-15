@@ -132,7 +132,7 @@ jobs:
           jq -e '[.. | strings | select(test("<[^>]+>"))] | length == 0' \
             packaging/mcpb/manifest.json.tmpl >/dev/null || { echo 'Resolve MCPB manifest placeholders before production' >&2; exit 1; }
       - name: Validate Codex plugin version matches VERSION
-        run: ./scripts/sync-codex-plugin.sh --check
+        run: ./scripts/sync-plugins.sh --check
       - run: make fmt-check vet test
       - run: make test-e2e
       - run: make test-scripts

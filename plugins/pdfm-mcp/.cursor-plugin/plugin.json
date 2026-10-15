@@ -1,0 +1,12 @@
+{
+  "name": "pdfm-mcp",
+  "version": "0.1.3",
+  "description": "Inspect and control Parallels Desktop virtual machines: list, power, screenshot, run guest commands, type keys, and run multi-step sequences. Requires the pdfm-mcp binary on your PATH (brew install --cask Parallels/tap/pdfm-mcp).",
+  "author": { "name": "Parallels" },
+  "homepage": "https://github.com/Parallels/pdfm-mcp",
+  "repository": "https://github.com/Parallels/pdfm-mcp",
+  "license": "MIT",
+  "keywords": ["parallels", "virtual machines", "vm", "automation", "macos", "mcp"],
+  "logo": "assets/logo.png",
+  "mcpServers": "./.mcp.json"
+}
