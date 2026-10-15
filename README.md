@@ -100,6 +100,15 @@ command = "/opt/homebrew/bin/pdfm-mcp"
 
 For the script installation or Intel Homebrew, change `command` to `/usr/local/bin/pdfm-mcp`. See the [official Codex MCP documentation](https://developers.openai.com/codex/mcp/).
 
+#### Codex plugin marketplace
+
+This repo is also a Codex plugin marketplace. With `pdfm-mcp` installed and on your `PATH`:
+
+```sh
+codex plugin marketplace add Parallels/pdfm-mcp
+codex plugin add pdfm-mcp@parallels
+```
+
 ### Claude Desktop
 
 Open `~/Library/Application Support/Claude/claude_desktop_config.json` and add the server to `mcpServers`, preserving any existing entries:

@@ -2,6 +2,7 @@
 """Version management for spec 023. Machine output goes to files, never stdout."""
 
 import argparse
+import json
 import os
 from pathlib import Path
 import re
@@ -37,6 +38,19 @@ def bump_version(value, kind):
     if kind == "patch":
         return f"{major}.{minor}.{patch + 1}"
     raise ValueError("invalid bump type")
+
+
+PLUGIN_MANIFEST = Path("plugins/pdfm-mcp/.codex-plugin/plugin.json")
+
+
+def sync_plugin_manifest(version_file, version):
+    """Set the Codex plugin version next to VERSION; skip when the manifest is absent."""
+    manifest = Path(version_file).resolve().parent / PLUGIN_MANIFEST
+    if not manifest.is_file():
+        return
+    data = json.loads(manifest.read_text())
+    data["version"] = version
+    manifest.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 
 
 def resolve_version(base, environment=None, run_number=None, tag=None):
@@ -128,6 +142,7 @@ def main():
             version = bump_version(base, args.type)
             parse_version(version, stable=True)
             Path(args.file).write_text(version + "\n")
+            sync_plugin_manifest(args.file, version)
             values = {"version": version}
         elif args.command == "resolve":
             if args.tag is not None and args.environment is not None:
