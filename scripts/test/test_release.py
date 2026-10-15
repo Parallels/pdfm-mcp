@@ -1,5 +1,6 @@
 """Behavioral tests for version resolution, file output and reviewed notes."""
 
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -77,6 +78,15 @@ class VersionTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout, b"")
             self.assertEqual(path.read_text(), "1.3.0\n")
+            manifest = Path(directory) / "plugins/pdfm-mcp/.codex-plugin/plugin.json"
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text('{"name": "pdfm-mcp", "version": "1.3.0"}\n')
+            result = subprocess.run(command + ["bump", "--file", str(path), "--type", "patch"],
+                                    capture_output=True, env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(path.read_text(), "1.3.1\n")
+            self.assertEqual(json.loads(manifest.read_text()),
+                             {"name": "pdfm-mcp", "version": "1.3.1"})
             path.write_text("bad\n")
             result = subprocess.run(command + ["bump", "--file", str(path)], capture_output=True, env=env)
             self.assertNotEqual(result.returncode, 0)

@@ -30,6 +30,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: make test-scripts
+      - name: Validate Codex plugin and marketplace
+        run: ./scripts/sync-codex-plugin.sh --check
       - name: Validate VERSION and release notes
         run: |
           python3 -B scripts/version.py current

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "pdfm-mcp": {
+      "command": "pdfm-mcp",
+      "args": []
+    }
+  }
+}

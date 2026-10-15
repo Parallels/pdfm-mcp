@@ -69,7 +69,8 @@ jobs:
           NEW_VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
-          git add VERSION CHANGELOG.md
+          ./scripts/sync-codex-plugin.sh --check   # version.py bump already updated the plugin
+          git add VERSION CHANGELOG.md plugins/pdfm-mcp/.codex-plugin/plugin.json
           git -c commit.gpgsign=false commit -m "chore(release): bump to ${NEW_VERSION}"
           # Normal push: an existing release branch is never overwritten.
           git push --set-upstream origin "release/${NEW_VERSION}"
