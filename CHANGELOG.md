@@ -2,6 +2,10 @@
 
 Release PRs collect merged changes for review before production publication.
 
+## [0.1.4] - 2026-10-15
+
+- chore: maintenance release.
+
 ## [0.1.3] - 2026-10-14
 
 - chore: maintenance release.
